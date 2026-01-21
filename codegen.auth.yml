@@ -1,0 +1,55 @@
+# GraphQL Code Generation Configuration (Auth-specific)
+# Uses introspection from /graphql/auth endpoint
+overwrite: true
+schema: "http://localhost:8000/graphql/auth"
+documents: "src/lib/graphql/operations/**/auth*.{ts,tsx}"
+config:
+  allowPartialOutputs: true
+generates:
+  src/lib/graphql/generated/auth/types.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+    config:
+      scalars:
+        DateTime: string
+        JSON: Record<string, any>
+      namingConvention:
+        typeNames: change-case-all#pascalCase
+        fieldNames: change-case-all#camelCase
+        enumValues: change-case-all#upperCase
+      avoidOptionals:
+        field: true
+        inputValue: false
+        object: false
+        defaultValue: false
+      enumsAsTypes: true
+      futureProofEnums: true
+      futureProofUnions: true
+      preResolveTypes: true
+      dedupeFragments: true
+      flattenGeneratedTypes: true
+  src/lib/graphql/generated/auth/hooks.ts:
+    plugins:
+      - add:
+          content: 
+            - "// @ts-nocheck"
+            - "import * as Types from './types';"
+      - typescript-react-apollo
+    config:
+      withHooks: true
+      withComponent: false
+      withHOC: false
+      importOperationTypesFrom: 'Types'
+      apolloReactHooksImportFrom: '@apollo/client/react'
+      scalars:
+        DateTime: string
+        JSON: Record<string, any>
+  src/lib/graphql/generated/auth/operations.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+    config:
+      scalars:
+        DateTime: string
+        JSON: Record<string, any>

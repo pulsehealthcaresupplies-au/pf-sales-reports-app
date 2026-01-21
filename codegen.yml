@@ -1,0 +1,57 @@
+# GraphQL Code Generation Configuration (Main)
+# This is the base configuration that can be extended
+overwrite: true
+schema: "http://localhost:8000/graphql/sales-reports"
+documents: "src/lib/graphql/operations/**/*.{ts,tsx}"
+config:
+  allowPartialOutputs: true
+  skipDocumentsValidation: true
+generates:
+  src/lib/graphql/generated/types.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+    config:
+      scalars:
+        DateTime: string
+        JSON: Record<string, any>
+        UUID: string
+        Decimal: string
+      namingConvention:
+        typeNames: change-case-all#pascalCase
+        fieldNames: change-case-all#camelCase
+        enumValues: change-case-all#upperCase
+      avoidOptionals:
+        field: true
+        inputValue: false
+        object: false
+        defaultValue: false
+      enumsAsTypes: true
+      futureProofEnums: true
+      futureProofUnions: true
+      preResolveTypes: true
+      dedupeFragments: true
+      flattenGeneratedTypes: true
+  src/lib/graphql/generated/hooks.ts:
+    plugins:
+      - typescript-react-apollo
+    config:
+      withHooks: true
+      withComponent: false
+      withHOC: false
+      apolloReactHooksImportFrom: '@apollo/client/react'
+      scalars:
+        DateTime: string
+        JSON: Record<string, any>
+        UUID: string
+        Decimal: string
+  src/lib/graphql/generated/operations.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+    config:
+      scalars:
+        DateTime: string
+        JSON: Record<string, any>
+        UUID: string
+        Decimal: string
