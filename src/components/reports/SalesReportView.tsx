@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useGetSalesReportQuery } from '@/lib/graphql/generated/hooks';
-import type { GetSalesReportQuery } from '@/lib/graphql/generated/types';
+import { useQuery } from '@apollo/client/react';
+import { GET_SALES_REPORTS_SALES_REPORT } from '@/graphql/operations/sales-reports-prefixed';
 import { Card, CardBody, CardHeader, Button, Input, Select, SelectItem, Spinner } from '@heroui/react';
 import { Download, FileText, FileSpreadsheet, Filter, RefreshCw, Smartphone, Tablet, Monitor } from 'lucide-react';
 import * as Types from '@/lib/graphql/generated/types';
@@ -23,7 +23,7 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
   const [groupBy, setGroupBy] = useState('day');
   const [warehouseId, setWarehouseId] = useState<string | undefined>(undefined);
 
-  const queryResult = useGetSalesReportQuery({
+  const { data, loading, error, refetch } = useQuery(GET_SALES_REPORTS_SALES_REPORT, {
     variables: {
       startDate: `${startDate}T00:00:00Z`,
       endDate: `${endDate}T23:59:59Z`,
@@ -33,8 +33,8 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
     fetchPolicy: 'network-only',
   });
 
-  // Use request state hook (with type assertion to handle Next.js App Router Result type)
-  const requestState = useRequestState<GetSalesReportQuery>(queryResult as any);
+  // Use request state hook
+  const requestState = useRequestState<any>({ data, loading, error, refetch });
 
   const handleExportCSV = () => {
     if (!requestState.data?.salesReport) {
@@ -42,7 +42,7 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
       return;
     }
 
-    const report = requestState.data.salesReport;
+    const report = requestState.data.salesReportsSalesReport;
     const exportData = {
       title: 'Sales Report',
       headers: ['Period', 'Revenue', 'Order Count'],
@@ -65,7 +65,7 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
       return;
     }
 
-    const report = requestState.data.salesReport;
+    const report = requestState.data.salesReportsSalesReport;
     const exportData = {
       title: 'Sales Report',
       headers: ['Period', 'Revenue', 'Order Count'],
@@ -82,7 +82,7 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
     toast.success('Excel file exported successfully');
   };
 
-  const report = requestState.data?.salesReport;
+  const report = requestState.data?.salesReportsSalesReport;
 
   return (
     <RequestStateWrapper

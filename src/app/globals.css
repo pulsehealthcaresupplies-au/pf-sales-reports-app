@@ -76,3 +76,35 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ============================================================================
+   Component Specific Styles
+   ============================================================================ */
+
+/* Modern inputs - Remove default browser outline and add custom focus styles */
+input,
+textarea,
+select {
+  @apply outline-none;
+  @apply focus:outline-none focus-visible:outline-none;
+  @apply focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  @apply transition-all duration-200;
+}
+
+/* Remove outline for all interactive elements */
+input:focus,
+textarea:focus,
+select:focus,
+button:focus,
+a:focus {
+  outline: none !important;
+}
+
+/* Ensure focus-visible works properly */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: none !important;
+}

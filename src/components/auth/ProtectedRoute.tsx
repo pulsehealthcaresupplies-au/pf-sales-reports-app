@@ -23,28 +23,24 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
     const router = useRouter();
     const { user, isAuthenticated, loading: authLoading, getValidToken, logout } = useAuth();
-    const [isVerifying, setIsVerifying] = useState(true);
-    const [authVerified, setAuthVerified] = useState(false);
+    // Initialize state to avoid redundant verifying if already authenticated
+    const [isVerifying, setIsVerifying] = useState(!isAuthenticated);
+    const [authVerified, setAuthVerified] = useState(isAuthenticated);
 
     useEffect(() => {
         async function verifyAuth() {
             try {
-                // Attempt to get a valid token (will refresh if needed)
-                const token = await getValidToken();
-
-                if (!token) {
-                    // Token refresh failed - clear state and redirect to login
-                    toast.error('Session Expired', {
-                        description: 'Please log in again to continue',
-                        duration: 4000,
-                    });
-                    await logout();
+                if (!isAuthenticated) {
+                    // Not authenticated - redirect to login
+                    setIsVerifying(false);
                     router.replace('/login');
                     return;
                 }
 
+                // If authenticate, we skip the blocking token verification
+                // getValidToken will handle expiry in background or on API calls
+
                 // Verify user has allowed role (additional client-side check)
-                // Backend will also verify, but this provides early feedback
                 const allowedRoles = [
                     'SUPER_USER',
                     'SUPER_ADMIN',
@@ -67,11 +63,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
                 setAuthVerified(true);
             } catch (error) {
                 console.error('Auth verification error:', error);
-                // Auth error - clear state and redirect to login
-                toast.error('Authentication Error', {
-                    description: 'Please log in again',
-                    duration: 4000,
-                });
                 await logout();
                 router.replace('/login');
             } finally {
@@ -79,17 +70,19 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
             }
         }
 
-        // Only verify if auth context is ready and user appears authenticated
         if (!authLoading) {
             if (isAuthenticated) {
+                if (!authVerified) setAuthVerified(true);
                 verifyAuth();
             } else {
-                // Not authenticated - redirect to login
                 setIsVerifying(false);
+                setAuthVerified(false);
                 router.replace('/login');
             }
+        } else {
+            setIsVerifying(true);
         }
-    }, [authLoading, isAuthenticated, getValidToken, logout, router, user]);
+    }, [authLoading, isAuthenticated, logout, router, user, authVerified]);
 
     // Show loading spinner while verifying auth
     if (authLoading || isVerifying) {

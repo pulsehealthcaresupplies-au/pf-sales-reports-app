@@ -8,7 +8,7 @@ import { Input } from '@heroui/react';
 import { Select, SelectItem } from '@heroui/react';
 import { FileSpreadsheet, FileText } from 'lucide-react';
 import { format } from 'date-fns';
-import { GET_CUSTOMER_REPORT } from '@/lib/graphql/operations/queries/sales-reports-queries';
+import { GET_SALES_REPORTS_CUSTOMER_REPORT } from '@/graphql/operations/sales-reports-prefixed';
 // TODO: After running npm run codegen, replace useQuery with:
 // import { useCustomerReportQuery, TopCustomer } from '@/lib/graphql/generated';
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
@@ -21,7 +21,7 @@ export function CustomerReportView() {
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [customerType, setCustomerType] = useState<string | undefined>(undefined);
 
-  const queryResult = useQuery<any>(GET_CUSTOMER_REPORT, {
+  const queryResult = useQuery<any>(GET_SALES_REPORTS_CUSTOMER_REPORT, {
     variables: {
       startDate: `${startDate}T00:00:00Z`,
       endDate: `${endDate}T23:59:59Z`,

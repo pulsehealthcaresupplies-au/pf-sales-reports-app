@@ -389,6 +389,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }, [authState.accessToken, authState.refreshToken, logout]);
 
+    // Proactive silent token refresh (added wrapper for consistent session management)
+    useEffect(() => {
+        if (!authState.expiresAt || !authState.isAuthenticated) return;
+
+        const expiresAt = authState.expiresAt;
+        const now = Date.now();
+
+        // Schedule refresh 2 minutes (120000ms) before expiry
+        const timeUntilRefresh = expiresAt - now - 120000;
+
+        let timer: NodeJS.Timeout;
+
+        if (timeUntilRefresh <= 0) {
+            const timeRemaining = expiresAt - now;
+            if (timeRemaining > 0 && !authState.isRefreshing) {
+                refreshAccessToken().catch(e => console.warn("Background auto-refresh failed", e));
+            }
+        } else {
+            timer = setTimeout(() => {
+                if (!authState.isRefreshing) {
+                    refreshAccessToken().catch(e => console.warn("Background auto-refresh failed", e));
+                }
+            }, timeUntilRefresh);
+        }
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [authState.expiresAt, authState.isAuthenticated, authState.isRefreshing, refreshAccessToken]);
+
     const value: AuthContextValue = {
         ...authState,
         login,

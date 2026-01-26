@@ -7,7 +7,7 @@ import { Button } from '@heroui/react';
 import { Select, SelectItem } from '@heroui/react';
 import { Spinner } from '@heroui/react';
 import { FileSpreadsheet, FileText } from 'lucide-react';
-import { GET_CREDIT_REPORT } from '@/lib/graphql/operations/queries/sales-reports-queries';
+import { GET_SALES_REPORTS_CREDIT_REPORT } from '@/graphql/operations/sales-reports-prefixed';
 // TODO: After running npm run codegen, replace useQuery with:
 // import { useCreditReportQuery, OverdueCustomer, DueSoonCustomer } from '@/lib/graphql/generated';
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
@@ -20,14 +20,14 @@ export function CreditReportView() {
 
   // Define provisional types until codegen is run
   interface CreditReportData {
-    creditReport: {
+    salesReportsCreditReport: {
       summary: any;
       overdueCustomers: any[];
       dueSoonCustomers: any[];
     };
   }
 
-  const { data, loading, error, refetch } = useQuery<CreditReportData>(GET_CREDIT_REPORT, {
+  const { data, loading, error, refetch } = useQuery<CreditReportData>(GET_SALES_REPORTS_CREDIT_REPORT, {
     variables: {
       creditType: creditType || null,
       includeOverdue,
@@ -37,12 +37,12 @@ export function CreditReportView() {
   });
 
   const handleExportCSV = () => {
-    if (!data?.creditReport) {
+    if (!data?.salesReportsCreditReport) {
       toast.error('No data to export');
       return;
     }
 
-    const report = data.creditReport;
+    const report = data.salesReportsCreditReport;
     const allCustomers = [
       // TODO: After codegen, replace 'any' with: OverdueCustomer | DueSoonCustomer
       ...report.overdueCustomers.map((c: any) => ({ ...c, type: 'Overdue' })),
@@ -67,12 +67,12 @@ export function CreditReportView() {
   };
 
   const handleExportExcel = async () => {
-    if (!data?.creditReport) {
+    if (!data?.salesReportsCreditReport) {
       toast.error('No data to export');
       return;
     }
 
-    const report = data.creditReport;
+    const report = data.salesReportsCreditReport;
     const allCustomers = [
       // TODO: After codegen, replace 'any' with: OverdueCustomer | DueSoonCustomer
       ...report.overdueCustomers.map((c: any) => ({ ...c, type: 'Overdue' })),

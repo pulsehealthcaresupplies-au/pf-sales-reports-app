@@ -185,7 +185,12 @@ export const refreshAccessToken = async (): Promise<string | null> => {
         const tokenData: TokenData = {
             accessToken,
             refreshToken: newRefreshToken || refreshToken,
-            expiresAt: expiresAt ? (typeof expiresAt === 'string' ? new Date(expiresAt).getTime() : expiresAt) : undefined,
+            // normalize expiresAt to ms (Date.now() units)
+            expiresAt: expiresAt
+                ? (typeof expiresAt === 'string'
+                    ? new Date(expiresAt).getTime()
+                    : (expiresAt > 1e12 ? expiresAt : expiresAt * 1000))
+                : undefined,
         };
 
         setTokens(tokenData);

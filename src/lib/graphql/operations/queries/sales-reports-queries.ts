@@ -154,3 +154,28 @@ export const GET_CREDIT_SUMMARY = gql`
   }
   ${CREDIT_DASHBOARD_SUMMARY_FRAGMENT}
 `;
+
+export const GET_PROFIT_REPORT = gql`
+  query GetProfitReport($startDate: String, $endDate: String, $groupBy: String) {
+    profitReport(startDate: $startDate, endDate: $endDate, groupBy: $groupBy) {
+      period {
+        startDate
+        endDate
+        groupBy
+      }
+      summary {
+        totalRevenue
+        totalCost
+        grossProfit
+        averageMargin
+      }
+      history {
+        date
+        revenue
+        cost
+        profit
+        margin
+      }
+    }
+  }
+`;

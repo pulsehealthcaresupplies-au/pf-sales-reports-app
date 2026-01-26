@@ -8,7 +8,7 @@ import { Input } from '@heroui/react';
 import { Select, SelectItem } from '@heroui/react';
 import { Spinner } from '@heroui/react';
 import { FileSpreadsheet, FileText } from 'lucide-react';
-import { GET_OVERDUE_CUSTOMERS } from '@/lib/graphql/operations/queries/sales-reports-queries';
+import { GET_SALES_REPORTS_OVERDUE_CUSTOMERS } from '@/graphql/operations/sales-reports-prefixed';
 // TODO: After running npm run codegen, replace useQuery with:
 // import { useOverdueCustomersQuery, OverdueCustomer } from '@/lib/graphql/generated';
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
@@ -20,7 +20,7 @@ export function OverdueCustomersView() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const { data, loading, error, refetch } = useQuery<any>(GET_OVERDUE_CUSTOMERS, {
+  const { data, loading, error, refetch } = useQuery<any>(GET_SALES_REPORTS_OVERDUE_CUSTOMERS, {
     variables: {
       daysOverdue,
       creditType: creditType || null,
@@ -31,7 +31,7 @@ export function OverdueCustomersView() {
   });
 
   const handleExportCSV = () => {
-    if (!data?.overdueCustomers?.customers?.length) {
+    if (!data?.salesReportsOverdueCustomers?.customers?.length) {
       toast.error('No data to export');
       return;
     }
@@ -53,7 +53,7 @@ export function OverdueCustomersView() {
   };
 
   const handleExportExcel = async () => {
-    if (!data?.overdueCustomers?.customers?.length) {
+    if (!data?.salesReportsOverdueCustomers?.customers?.length) {
       toast.error('No data to export');
       return;
     }
@@ -93,7 +93,7 @@ export function OverdueCustomersView() {
     );
   }
 
-  const customers = data?.overdueCustomers;
+  const customers = data?.salesReportsOverdueCustomers;
   if (!customers || customers.customers.length === 0) {
     return <div className="text-center py-12">No overdue customers found</div>;
   }

@@ -242,13 +242,13 @@ export default function LoginPage() {
                             className="p-3 bg-primary-50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-800/50 rounded-xl cursor-pointer hover:bg-primary-100/50 dark:hover:bg-primary-900/20 transition-colors"
                             onClick={() => {
                                 setEmail('sales@pulse.com');
-                                setPassword('Sales123!');
+                                setPassword('sales123');
                             }}
                         >
                             <p className="text-[10px] font-bold text-primary-500 mb-2 uppercase tracking-widest">
                                 Test Credentials
                             </p>
-                            <p className="text-[11px] text-default-600 font-mono">sales@pulse.com / Sales123!</p>
+                            <p className="text-[11px] text-default-600 font-mono">sales@pulse.com / sales123</p>
                         </div>
                     </div>
 

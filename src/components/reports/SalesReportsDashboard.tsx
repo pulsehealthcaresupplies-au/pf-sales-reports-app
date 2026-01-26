@@ -10,6 +10,7 @@ import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { SalesReportView } from './SalesReportView';
 import { CustomerReportView } from './CustomerReportView';
 import { ProductPerformanceView } from './ProductPerformanceView';
+import { ProfitReportView } from './ProfitReportView';
 import { CreditReportView } from './CreditReportView';
 import { OverdueCustomersView } from './OverdueCustomersView';
 import { DueSoonCustomersView } from './DueSoonCustomersView';
@@ -83,6 +84,7 @@ export function SalesReportsDashboard() {
             <Tab key="sales" title="Sales Report" />
             <Tab key="customers" title="Customer Report" />
             <Tab key="products" title="Product Performance" />
+            <Tab key="profit" title="Profit Report" />
             <Tab key="credit" title="Credit Report" />
             <Tab key="overdue" title="Overdue Customers" />
             <Tab key="due-soon" title="Due Soon Customers" />
@@ -92,6 +94,7 @@ export function SalesReportsDashboard() {
           {selectedTab === 'sales' && <SalesReportView />}
           {selectedTab === 'customers' && <CustomerReportView />}
           {selectedTab === 'products' && <ProductPerformanceView />}
+          {selectedTab === 'profit' && <ProfitReportView />}
           {selectedTab === 'credit' && <CreditReportView />}
           {selectedTab === 'overdue' && <OverdueCustomersView />}
           {selectedTab === 'due-soon' && <DueSoonCustomersView />}

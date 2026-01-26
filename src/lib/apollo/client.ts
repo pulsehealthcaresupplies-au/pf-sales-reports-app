@@ -55,7 +55,8 @@ const authLink = setContext(async (_, { headers, skipAuth }) => {
       headers: {
         ...headers,
         'Content-Type': 'application/json',
-        'X-App-Name': 'SALES_REPORTS',
+        'x-app': 'SALES_REPORTS',  // App identifier
+        'X-App-Name': 'SALES_REPORTS',  // Legacy support
       },
     };
   }
@@ -67,7 +68,8 @@ const authLink = setContext(async (_, { headers, skipAuth }) => {
       ...headers,
       authorization: token ? `Bearer ${token}` : '',
       'Content-Type': 'application/json',
-      'X-App-Name': 'SALES_REPORTS',
+      'x-app': 'SALES_REPORTS',  // App identifier (consistent with other apps)
+      'X-App-Name': 'SALES_REPORTS',  // Legacy support
     },
   };
 });

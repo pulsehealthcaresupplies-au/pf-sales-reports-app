@@ -8,7 +8,7 @@ import { Input } from '@heroui/react';
 import { Select, SelectItem } from '@heroui/react';
 import { Spinner } from '@heroui/react';
 import { FileSpreadsheet, FileText } from 'lucide-react';
-import { GET_DUE_SOON_CUSTOMERS } from '@/lib/graphql/operations/queries/sales-reports-queries';
+import { GET_SALES_REPORTS_DUE_SOON_CUSTOMERS } from '@/graphql/operations/sales-reports-prefixed';
 // TODO: After running npm run codegen, replace useQuery with:
 // import { useDueSoonCustomersQuery, DueSoonCustomer } from '@/lib/graphql/generated';
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
@@ -20,7 +20,7 @@ export function DueSoonCustomersView() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  const { data, loading, error, refetch } = useQuery<any>(GET_DUE_SOON_CUSTOMERS, {
+  const { data, loading, error, refetch } = useQuery<any>(GET_SALES_REPORTS_DUE_SOON_CUSTOMERS, {
     variables: {
       days,
       creditType: creditType || null,
@@ -31,7 +31,7 @@ export function DueSoonCustomersView() {
   });
 
   const handleExportCSV = () => {
-    if (!data?.dueSoonCustomers?.customers?.length) {
+    if (!data?.salesReportsDueSoonCustomers?.customers?.length) {
       toast.error('No data to export');
       return;
     }
@@ -53,7 +53,7 @@ export function DueSoonCustomersView() {
   };
 
   const handleExportExcel = async () => {
-    if (!data?.dueSoonCustomers?.customers?.length) {
+    if (!data?.salesReportsDueSoonCustomers?.customers?.length) {
       toast.error('No data to export');
       return;
     }
@@ -93,7 +93,7 @@ export function DueSoonCustomersView() {
     );
   }
 
-  const customers = data?.dueSoonCustomers;
+  const customers = data?.salesReportsDueSoonCustomers;
   if (!customers || customers.customers.length === 0) {
     return <div className="text-center py-12">No customers due soon</div>;
   }

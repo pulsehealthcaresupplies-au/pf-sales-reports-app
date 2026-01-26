@@ -8,7 +8,7 @@ import { Input } from '@heroui/react';
 import { Spinner } from '@heroui/react';
 import { FileSpreadsheet, FileText } from 'lucide-react';
 import { format } from 'date-fns';
-import { GET_PRODUCT_PERFORMANCE_REPORT } from '@/lib/graphql/operations/queries/sales-reports-queries';
+import { GET_SALES_REPORTS_PRODUCT_PERFORMANCE_REPORT } from '@/graphql/operations/sales-reports-prefixed';
 // TODO: After running npm run codegen, replace useQuery with:
 // import { useProductPerformanceReportQuery, ProductPerformance } from '@/lib/graphql/generated';
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
@@ -19,7 +19,7 @@ export function ProductPerformanceView() {
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [limit, setLimit] = useState(20);
 
-  const { data, loading, error, refetch } = useQuery<any>(GET_PRODUCT_PERFORMANCE_REPORT, {
+  const { data, loading, error, refetch } = useQuery<any>(GET_SALES_REPORTS_PRODUCT_PERFORMANCE_REPORT, {
     variables: {
       startDate: `${startDate}T00:00:00Z`,
       endDate: `${endDate}T23:59:59Z`,
@@ -29,12 +29,12 @@ export function ProductPerformanceView() {
   });
 
   const handleExportCSV = () => {
-    if (!data?.productPerformanceReport) {
+    if (!data?.salesReportsProductPerformanceReport) {
       toast.error('No data to export');
       return;
     }
 
-    const report = data.productPerformanceReport;
+    const report = data.salesReportsProductPerformanceReport;
     const exportData = {
       title: 'Product Performance Report',
       headers: ['Product Name', 'SKU', 'Category', 'Revenue', 'Quantity Sold', 'Orders', 'Avg Price'],
@@ -55,12 +55,12 @@ export function ProductPerformanceView() {
   };
 
   const handleExportExcel = async () => {
-    if (!data?.productPerformanceReport) {
+    if (!data?.salesReportsProductPerformanceReport) {
       toast.error('No data to export');
       return;
     }
 
-    const report = data.productPerformanceReport;
+    const report = data.salesReportsProductPerformanceReport;
     const exportData = {
       title: 'Product Performance Report',
       headers: ['Product Name', 'SKU', 'Category', 'Revenue', 'Quantity Sold', 'Orders', 'Avg Price'],
