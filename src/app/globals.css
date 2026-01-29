@@ -32,6 +32,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
+    --focus-ring: 214.3 31.8% 91.4%;
 
     --radius: 0.5rem;
   }
@@ -64,6 +65,7 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    --focus-ring: 217.2 32.6% 17.5%;
   }
 }
 
@@ -81,14 +83,55 @@
    Component Specific Styles
    ============================================================================ */
 
-/* Modern inputs - Remove default browser outline and add custom focus styles */
+/* Fix outline-solid: override Tailwind .!outline-solid so no inner solid outline on form elements */
+input.outline-solid,
+textarea.outline-solid,
+select.outline-solid,
+input,
+textarea,
+select,
+[data-slot="input-wrapper"].outline-solid,
+[data-slot="input-wrapper"] .outline-solid,
+[data-slot="input-wrapper"] input,
+[data-slot="input-wrapper"] textarea,
+[class*="inputWrapper"].outline-solid,
+[class*="inputWrapper"] .outline-solid,
+[class*="inputWrapper"] input,
+[class*="inputWrapper"] textarea,
+[class*="input-wrapper"].outline-solid,
+[class*="input-wrapper"] .outline-solid,
+[class*="input-wrapper"] input,
+[class*="input-wrapper"] textarea {
+  outline: none !important;
+  outline-style: none !important;
+  outline-width: 0 !important;
+  outline-color: transparent !important;
+  --tw-outline-style: none !important;
+}
+
+[data-slot="input-wrapper"].outline-solid,
+[class*="inputWrapper"].outline-solid,
+[class*="input-wrapper"].outline-solid {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+/* Form controls - no outline/ring on focus */
 input,
 textarea,
 select {
-  @apply outline-none;
-  @apply focus:outline-none focus-visible:outline-none;
-  @apply focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
-  @apply transition-all duration-200;
+  @apply outline-none transition-all duration-200;
+}
+
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* Remove outline for all interactive elements */
@@ -100,11 +143,136 @@ a:focus {
   outline: none !important;
 }
 
-/* Ensure focus-visible works properly */
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 button:focus-visible,
 a:focus-visible {
   outline: none !important;
+}
+
+/* HeroUI Input: 1px theme border only, suppress blue focus ring */
+[data-slot="input-wrapper"],
+[class*="inputWrapper"],
+[class*="input-wrapper"] {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: hsl(var(--border)) !important;
+  --tw-ring-width: 0px !important;
+  --tw-ring-color: transparent !important;
+}
+
+[data-slot="input-wrapper"]:focus-within,
+[class*="inputWrapper"]:focus-within,
+[class*="input-wrapper"]:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: hsl(var(--border)) !important;
+  border-width: 1px !important;
+  --tw-ring-width: 0px !important;
+  --tw-ring-color: transparent !important;
+}
+
+/* Inner input/textarea inside wrapper: no border (wrapper has 1px), no outline/ring */
+[data-slot="input-wrapper"] input,
+[data-slot="input-wrapper"] textarea,
+[class*="inputWrapper"] input,
+[class*="inputWrapper"] textarea,
+[class*="input-wrapper"] input,
+[class*="input-wrapper"] textarea {
+  outline: none !important;
+  box-shadow: none !important;
+  border-width: 0 !important;
+  border-color: transparent !important;
+}
+
+/* Inner input/textarea: no border (wrapper provides outer border only) */
+[data-slot="input-wrapper"] input:focus,
+[data-slot="input-wrapper"] input:focus-visible,
+[data-slot="input-wrapper"] textarea:focus,
+[data-slot="input-wrapper"] textarea:focus-visible,
+[class*="inputWrapper"] input:focus,
+[class*="inputWrapper"] input:focus-visible,
+[class*="inputWrapper"] textarea:focus,
+[class*="inputWrapper"] textarea:focus-visible,
+[class*="input-wrapper"] input:focus,
+[class*="input-wrapper"] input:focus-visible,
+[class*="input-wrapper"] textarea:focus,
+[class*="input-wrapper"] textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-color: transparent !important;
+  border-width: 0 !important;
+}
+
+/* Button - focus ring outside (offset) */
+button {
+  @apply outline-none transition-colors duration-200;
+}
+
+button:focus-visible {
+  outline: 2px solid hsl(var(--focus-ring));
+  outline-offset: 2px;
+}
+
+/* Wrapper containing input - no extra outline */
+.group:has(> input:focus),
+.group:has(> input:focus-visible),
+.group:has(> textarea:focus),
+.group:has(> textarea:focus-visible) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* High specificity: 1px border only, suppress blue focus */
+body [data-slot="input-wrapper"] {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+body [data-slot="input-wrapper"]:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: hsl(var(--border)) !important;
+  border-width: 1px !important;
+  --tw-ring-width: 0px !important;
+  --tw-ring-color: transparent !important;
+}
+
+body [data-slot="input-wrapper"] input,
+body [data-slot="input-wrapper"] textarea {
+  outline: none !important;
+  outline-style: none !important;
+  outline-width: 0 !important;
+  --tw-outline-style: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-width: 0 !important;
+  border-color: transparent !important;
+}
+
+body [data-slot="input-wrapper"] input:focus,
+body [data-slot="input-wrapper"] input:focus-visible,
+body [data-slot="input-wrapper"] textarea:focus,
+body [data-slot="input-wrapper"] textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  border-color: transparent !important;
+  border-width: 0 !important;
+}
+
+/* Beat Tailwind .!outline-solid on HeroUI inputs (class contains outline-solid) */
+body [data-slot="input-wrapper"] input[class*="outline-solid"],
+body [data-slot="input-wrapper"] textarea[class*="outline-solid"],
+body [class*="inputWrapper"] input[class*="outline-solid"],
+body [class*="inputWrapper"] textarea[class*="outline-solid"],
+body [class*="input-wrapper"] input[class*="outline-solid"],
+body [class*="input-wrapper"] textarea[class*="outline-solid"] {
+  outline: none !important;
+  outline-style: none !important;
+  outline-width: 0 !important;
+  --tw-outline-style: none !important;
 }

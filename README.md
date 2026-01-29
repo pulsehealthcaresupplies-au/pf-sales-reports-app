@@ -28,20 +28,30 @@ Sales Reports Dashboard for Pulse Healthcare Supplies - A dedicated Next.js appl
 
 ## Getting Started
 
-### Installation
+### Prerequisites
+
+- Node.js 20+ and npm
+- Backend API Gateway at `http://localhost:8000`
+
+### Installation (from this app directory)
 
 ```bash
-cd sales-reports-app
-npm install
+cd pulse-health-supplies-frontend/sales-reports-app
+
+npm install --legacy-peer-deps
+
+# Create .env.local with:
+# NEXT_PUBLIC_API_GATEWAY_URL=http://localhost:8000
+# NEXT_PUBLIC_GRAPHQL_ENDPOINT=http://localhost:8000/graphql/sales-reports
 ```
 
-### Environment Variables
+### From monorepo root
 
-Create a `.env.local` file:
-
-```env
-NEXT_PUBLIC_API_GATEWAY_URL=http://localhost:8000
-NEXT_PUBLIC_GRAPHQL_ENDPOINT=http://localhost:8000/graphql/admin
+```bash
+cd pulse-health-supplies-frontend
+make install-sales-reports
+make setup
+make dev-sales-reports
 ```
 
 ### Development
@@ -50,9 +60,9 @@ NEXT_PUBLIC_GRAPHQL_ENDPOINT=http://localhost:8000/graphql/admin
 npm run dev
 ```
 
-The app will be available at `http://localhost:3006`
+The app will be available at **http://localhost:3006**
 
-### Build
+### Build and production
 
 ```bash
 npm run build
@@ -79,3 +89,7 @@ The app connects to the dedicated sales reports GraphQL endpoint: `/graphql/sale
 4. **Credit Report**: Credit account management
 5. **Overdue Customers**: Customers with overdue payments
 6. **Due Soon Customers**: Customers with payments due soon
+
+## 📁 Documentation
+
+- **Historical / app-specific docs**: [archive/2026-01-29-root-cleanup/](archive/2026-01-29-root-cleanup/) (component guide, migration, security, setup).
