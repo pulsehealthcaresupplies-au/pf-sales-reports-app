@@ -45,7 +45,7 @@ npm install --legacy-peer-deps
 # NEXT_PUBLIC_GRAPHQL_ENDPOINT=http://localhost:8000/graphql/sales-reports
 ```
 
-### From monorepo root
+### From repo root (pulse-health-supplies-frontend)
 
 ```bash
 cd pulse-health-supplies-frontend
