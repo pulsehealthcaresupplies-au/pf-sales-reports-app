@@ -7,7 +7,7 @@ import { RetryLink } from '@apollo/client/link/retry';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
-import { getWebSocketEndpoint } from '@/config/endpoints';
+import { getGraphQLEndpoint, getWebSocketEndpoint } from '@/config/endpoints';
 import {
   getAccessToken,
   refreshAccessToken,
@@ -41,10 +41,8 @@ export const setTokenGetter = (getter: () => string | null | Promise<string | nu
 };
 
 const httpLink = createHttpLink({
-  uri:
-    process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
-    `${process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:8000'}/graphql/sales-reports`,
-  credentials: 'include', // Include cookies for HttpOnly token support
+  uri: getGraphQLEndpoint('sales-reports'),
+  credentials: 'include',
 });
 
 // Auth link with secure header management

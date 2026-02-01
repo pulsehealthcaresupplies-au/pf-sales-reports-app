@@ -1,24 +1,28 @@
 /**
  * Endpoint configuration for Sales Reports App
- * GraphQL-only endpoints for queries, mutations, and subscriptions
- * Production-ready, secure configuration
+ * GraphQL-only endpoints for queries, mutations, and subscriptions.
+ * Client-side uses same-origin proxy (/api/graphql/sales-reports) to avoid CORS.
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const GRAPHQL_SALES_REPORTS_ENDPOINT = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || '/graphql/sales-reports';
+const GRAPHQL_SALES_REPORTS_PATH = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || '/graphql/sales-reports';
+const GRAPHQL_PROXY_PATH = '/api/graphql/sales-reports';
 const GRAPHQL_AUTH_ENDPOINT = process.env.NEXT_PUBLIC_GRAPHQL_AUTH_ENDPOINT || '/graphql/auth';
 
+const salesReportsFullUrl =
+  typeof window !== 'undefined'
+    ? GRAPHQL_PROXY_PATH
+    : GRAPHQL_SALES_REPORTS_PATH.startsWith('http')
+      ? GRAPHQL_SALES_REPORTS_PATH
+      : `${API_BASE_URL.replace(/\/$/, '')}${GRAPHQL_SALES_REPORTS_PATH.startsWith('/') ? '' : '/'}${GRAPHQL_SALES_REPORTS_PATH}`;
+
 export const endpoints = {
-  // Base API URL
   apiBaseUrl: API_BASE_URL,
 
-  // GraphQL HTTP endpoints (for queries and mutations)
   graphql: {
     salesReports: {
-      endpoint: GRAPHQL_SALES_REPORTS_ENDPOINT,
-      fullUrl: GRAPHQL_SALES_REPORTS_ENDPOINT.startsWith('http')
-        ? GRAPHQL_SALES_REPORTS_ENDPOINT
-        : `${API_BASE_URL}${GRAPHQL_SALES_REPORTS_ENDPOINT}`,
+      endpoint: GRAPHQL_SALES_REPORTS_PATH,
+      fullUrl: salesReportsFullUrl,
     },
     auth: {
       endpoint: GRAPHQL_AUTH_ENDPOINT,
@@ -37,7 +41,7 @@ export const endpoints = {
           const base = API_BASE_URL.replace(/^https?:\/\//, '');
           // Use wss:// for https:// base URLs, ws:// for http://
           const protocol = API_BASE_URL.startsWith('https://') ? 'wss://' : 'ws://';
-          return `${protocol}${base}${GRAPHQL_SALES_REPORTS_ENDPOINT}/ws`;
+          return `${protocol}${base}${GRAPHQL_SALES_REPORTS_PATH}/ws`;
         })(),
       auth:
         process.env.NEXT_PUBLIC_WS_AUTH_URL ||

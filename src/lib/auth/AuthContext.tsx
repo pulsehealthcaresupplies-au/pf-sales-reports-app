@@ -48,13 +48,14 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 // Local keys for user data only (tokens managed by token-manager)
 const USER_KEY = 'sales_reports_user';
 
-// Allowed roles for sales reports app
+// Allowed roles for sales reports app (must match backend role_validator APP_ROLES['sales-reports'])
 const ALLOWED_ROLES = [
     'SUPER_USER',
     'SUPER_ADMIN',
-    'SALES_TEAM',
-    'FINANCE_ADMIN',
+    'ADMIN',
     'WAREHOUSE_ADMIN',
+    'FINANCE_ADMIN',
+    'SALES_TEAM',
 ];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -276,8 +277,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (data?.login) {
                     const { accessToken, refreshToken, expiresAt: expiresAtRaw, expiresIn, user } = data.login;
 
-                    // SECURITY: Verify user has allowed role
-                    if (!user?.role || !ALLOWED_ROLES.includes(user.role)) {
+                    // SECURITY: Verify user has allowed role (case-insensitive to match backend)
+                    const userRole = user?.role?.toUpperCase?.() ?? '';
+                    if (!userRole || !ALLOWED_ROLES.includes(userRole)) {
                         throw new Error('Access denied. Your role does not have permission to access Sales Reports.');
                     }
 
@@ -298,19 +300,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
             } catch (error: any) {
                 console.error('Login failed:', error);
-
-                // Extract error message from GraphQL errors
-                let errorMessage = 'Login failed. Please check your credentials.';
-
-                if (error?.graphQLErrors && error.graphQLErrors.length > 0) {
-                    errorMessage = error.graphQLErrors[0].message;
-                } else if (error?.networkError) {
-                    errorMessage = 'Network error. Please check your connection and try again.';
-                } else if (error?.message) {
-                    errorMessage = error.message;
-                }
-
-                // Create a new error with the extracted message
+                const { getApiErrorMessage } = await import('@/lib/utils/apiErrorDisplay');
+                const errorMessage = getApiErrorMessage(error);
                 const loginError = new Error(errorMessage);
                 (loginError as any).graphQLErrors = error?.graphQLErrors;
                 (loginError as any).networkError = error?.networkError;
