@@ -8,12 +8,14 @@ import { getGraphQLEndpointPath } from '@/config/endpoints';
 import {
     setTokens,
     clearTokens,
+    setHashPhrase,
     refreshAccessToken as managerRefresh,
     getAccessToken,
     isTokenExpired
 } from './token-manager';
 import { setTokenGetter } from '@/lib/apollo/client';
 import { ROUTES, getLoginUrl } from '@/config/routes';
+import { getAuthKeys } from './auth-keys';
 
 // Temporary types - will be replaced with generated types after codegen
 interface User {
@@ -44,9 +46,6 @@ interface AuthContextValue extends AuthState {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-// Local keys for user data only (tokens managed by token-manager)
-const USER_KEY = 'sales_reports_user';
 
 // Allowed roles for sales reports app (must match backend role_validator APP_ROLES['sales-reports'])
 const ALLOWED_ROLES = [
@@ -145,9 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 expiresAt: expiresAtTimestamp,
             });
 
-            // Manual persist for user
+            // Persist user with key from auth-keys (same pattern as admin-dashboard)
             if (user) {
-                localStorage.setItem(USER_KEY, JSON.stringify(user));
+                localStorage.setItem(getAuthKeys().user, JSON.stringify(user));
             }
         },
         []
@@ -168,17 +167,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }) as any;
 
             if (data?.refreshToken) {
-                const { accessToken, refreshToken, expiresAt, user } = data.refreshToken;
+                const { accessToken, refreshToken, expiresAt, hashPhrase, user } = data.refreshToken;
                 const expiresAtTimestamp = typeof expiresAt === 'number'
                     ? expiresAt
                     : expiresAt ? new Date(expiresAt).getTime() : Date.now() + 3600000;
 
-                // Use common function to process auth response (same as login)
                 await processAuthResponse(
                     accessToken,
                     refreshToken || authState.refreshToken,
-                    user || authState.user, // Keep existing user if not returned
-                    expiresAtTimestamp
+                    user || authState.user,
+                    expiresAtTimestamp,
+                    hashPhrase ?? undefined
                 );
 
                 return accessToken;
@@ -217,11 +216,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const loadAuthState = () => {
             try {
+                const keys = getAuthKeys();
                 const accessToken = getAccessToken();
-                const userStr = localStorage.getItem(USER_KEY);
-                // We read keys that token-manager keeps (for completeness in state hydration)
-                const refreshToken = localStorage.getItem('sales_reports_refresh_token');
-                const expiresAt = localStorage.getItem('sales_reports_expires_at');
+                const userStr = localStorage.getItem(keys.user);
+                const refreshToken = localStorage.getItem(keys.refreshToken);
+                const expiresAt = localStorage.getItem(keys.expiresAt);
 
                 if (accessToken && refreshToken && expiresAt) {
                     const user = userStr ? JSON.parse(userStr) : null;
@@ -293,8 +292,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000);
                     }
 
-                    // Use common function to process auth response
-                    await processAuthResponse(accessToken, refreshToken, user, expiresAt);
+                    await processAuthResponse(accessToken, refreshToken, user, expiresAt, hashPhrase ?? undefined);
 
                     console.log('✅ Login successful! Cookie set. isAuthenticated:', true);
                 }

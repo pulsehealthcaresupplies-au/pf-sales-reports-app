@@ -8,6 +8,8 @@ import { Input } from '@heroui/react';
 import { Card, CardBody, CardHeader } from '@heroui/react';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { getAccessToken } from '@/lib/utils/authHeaders';
+import { getRefreshToken } from '@/lib/auth/token-manager';
 
 /**
  * Login Page for Sales Reports App
@@ -85,10 +87,10 @@ export default function LoginPage() {
             // Attempt login (supports email or phone)
             await login(finalEmail, password);
 
-            // Set HttpOnly cookies via API route for middleware
+            // Set HttpOnly cookies via API route for middleware (token-manager = single source, same as admin-dashboard)
             try {
-                const token = localStorage.getItem('sales_reports_access_token');
-                const refreshToken = localStorage.getItem('sales_reports_refresh_token');
+                const token = getAccessToken();
+                const refreshToken = getRefreshToken();
 
                 if (token && refreshToken) {
                     await fetch('/api/auth/set-tokens', {

@@ -11,6 +11,7 @@ export const LOGIN_MUTATION = gql`
       accessToken
       refreshToken
       expiresAt
+      hashPhrase
       user {
         id
         email
@@ -30,6 +31,7 @@ export const REFRESH_TOKEN_MUTATION = gql`
       accessToken
       refreshToken
       expiresAt
+      hashPhrase
       user {
         id
         email

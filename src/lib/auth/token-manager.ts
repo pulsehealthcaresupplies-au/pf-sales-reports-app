@@ -82,11 +82,28 @@ export const getRefreshToken = (): string | null => {
 };
 
 /**
- * Clear all tokens (logout)
+ * Get hash phrase (secure verification header); prefixed key only
  */
+export const getHashPhrase = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(AUTH_KEYS.hashPhrase);
+};
+
 /**
- * Clear all tokens (logout)
- * Uses centralized auth-keys configuration to ensure all auth data is cleared
+ * Set or clear hash phrase (from login/refresh; cleared on logout)
+ */
+export const setHashPhrase = (hashPhrase: string | null): void => {
+    if (typeof window === 'undefined') return;
+    if (hashPhrase?.trim()) {
+        localStorage.setItem(AUTH_KEYS.hashPhrase, hashPhrase.trim());
+    } else {
+        localStorage.removeItem(AUTH_KEYS.hashPhrase);
+    }
+};
+
+/**
+ * Clear all tokens (logout).
+ * Uses centralized auth-keys configuration to ensure all auth data is cleared (same as admin-dashboard).
  */
 export const clearTokens = (): void => {
     if (typeof window === 'undefined') return;
@@ -180,7 +197,10 @@ export const refreshAccessToken = async (): Promise<string | null> => {
             return null;
         }
 
-        const { accessToken, refreshToken: newRefreshToken, expiresAt, user } = result.data.refreshToken;
+        const { accessToken, refreshToken: newRefreshToken, expiresAt, hashPhrase, user } = result.data.refreshToken;
+        if (hashPhrase?.trim()) {
+            setHashPhrase(hashPhrase);
+        }
 
         const tokenData: TokenData = {
             accessToken,

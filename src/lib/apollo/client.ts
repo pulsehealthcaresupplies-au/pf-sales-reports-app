@@ -10,6 +10,7 @@ import { createClient } from 'graphql-ws';
 import { getGraphQLEndpoint, getWebSocketEndpoint } from '@/config/endpoints';
 import {
   getAccessToken,
+  getHashPhrase,
   refreshAccessToken,
   clearTokens
 } from '../auth/token-manager';
@@ -60,14 +61,16 @@ const authLink = setContext(async (_, { headers, skipAuth }) => {
   }
 
   const token = await tokenGetter();
+  const hashPhrase = getHashPhrase();
 
   return {
     headers: {
       ...headers,
       authorization: token ? `Bearer ${token}` : '',
+      ...(hashPhrase ? { 'Hash-Phrase': hashPhrase } : {}),
       'Content-Type': 'application/json',
-      'x-app': 'SALES_REPORTS',  // App identifier (consistent with other apps)
-      'X-App-Name': 'SALES_REPORTS',  // Legacy support
+      'x-app': 'SALES_REPORTS',
+      'X-App-Name': 'SALES_REPORTS',
     },
   };
 });

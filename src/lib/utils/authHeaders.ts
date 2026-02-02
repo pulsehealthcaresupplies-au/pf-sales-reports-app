@@ -1,51 +1,22 @@
 /**
  * Authentication Headers Utility for Sales Reports App
- * 
- * Provides secure authentication header management for Sales Reports app.
- * Ensures consistent header format across all GraphQL requests:
- * - Authorization: Bearer <token>
- * - X-App-Name: SALES_REPORTS
- * - Content-Type: application/json
- * 
- * SECURITY FEATURES:
- * - Only includes Authorization header if token exists and is valid
- * - Never sends empty Authorization headers
- * - Works gracefully without authentication
- * - App-specific token storage to prevent conflicts
+ *
+ * Same pattern as admin-dashboard: all keys come from @/lib/auth/auth-keys only.
+ * No local key constants; getAccessToken/clearAuthTokens use getAuthKeys() and clearAllAuthData().
  */
 
-// App-specific configuration
-const APP_NAME = 'sales-reports';
+import { getAuthKeys, clearAllAuthData } from '@/lib/auth/auth-keys';
+
 const APP_NAME_HEADER = 'SALES_REPORTS';
-const TOKEN_KEY = 'sales_reports_access_token';
 
 /**
- * Get the access token from localStorage
- * Tries app-specific key first, then fallback keys
+ * Get the access token (prefixed key from auth-keys)
  */
 export function getAccessToken(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
+  if (typeof window === 'undefined') return null;
   try {
-    // Try app-specific key first
-    let token = localStorage.getItem(TOKEN_KEY);
-    
-    // Fallback to common keys (for backward compatibility)
-    if (!token) {
-      token = localStorage.getItem('access_token') ||
-              localStorage.getItem('auth_token') ||
-              localStorage.getItem('token') ||
-              null;
-    }
-
-    // Validate token format (basic check)
-    if (token && token.trim().length > 0) {
-      return token;
-    }
-
-    return null;
+    const token = localStorage.getItem(getAuthKeys().accessToken);
+    return token?.trim() || null;
   } catch (error) {
     console.error('Error getting access token:', error);
     return null;
@@ -111,29 +82,12 @@ export function isAuthenticated(): boolean {
 }
 
 /**
- * Clear authentication tokens
- * SECURITY: Clears all token storage locations
+ * Clear authentication tokens (prefixed keys via clearAllAuthData)
  */
 export function clearAuthTokens(): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
+  if (typeof window === 'undefined') return;
   try {
-    // Clear app-specific token
-    localStorage.removeItem(TOKEN_KEY);
-    
-    // Clear common tokens (for backward compatibility)
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_data');
-    
-    // Clear app-specific user data
-    localStorage.removeItem('sales_reports_user');
-    localStorage.removeItem('sales_reports_refresh_token');
-    localStorage.removeItem('sales_reports_expires_at');
+    clearAllAuthData();
   } catch (error) {
     console.error('Error clearing auth tokens:', error);
   }

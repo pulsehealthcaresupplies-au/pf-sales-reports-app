@@ -6,15 +6,12 @@
  */
 
 export interface AuthKeys {
-  // Token keys
   accessToken: string;
   refreshToken: string;
   expiresAt: string;
-  
-  // User data keys
   user: string;
-  
-  // Cookie keys (for middleware)
+  /** Hash phrase for extra verification (secure headers); cleared on logout */
+  hashPhrase: string;
   cookieAccessToken: string;
   cookieRefreshToken: string;
 }
@@ -28,6 +25,7 @@ export function getAuthKeys(): AuthKeys {
     refreshToken: 'sales_reports_refresh_token',
     expiresAt: 'sales_reports_expires_at',
     user: 'sales_reports_user',
+    hashPhrase: 'sales_reports_hash_phrase',
     cookieAccessToken: 'sales_reports_access_token',
     cookieRefreshToken: 'sales_reports_refresh_token',
   };
@@ -47,11 +45,13 @@ export function clearAllAuthData(): void {
   localStorage.removeItem(keys.refreshToken);
   localStorage.removeItem(keys.expiresAt);
   localStorage.removeItem(keys.user);
+  if (keys.hashPhrase) localStorage.removeItem(keys.hashPhrase);
 
   // Clear sessionStorage (if any auth data is stored there)
   sessionStorage.removeItem(keys.accessToken);
   sessionStorage.removeItem(keys.refreshToken);
   sessionStorage.removeItem(keys.user);
+  if (keys.hashPhrase) sessionStorage.removeItem(keys.hashPhrase);
 
   // Clear cookies with proper path and domain
   const deleteCookie = (name: string) => {

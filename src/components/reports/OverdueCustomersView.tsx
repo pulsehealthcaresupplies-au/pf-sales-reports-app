@@ -12,13 +12,14 @@ import { GET_SALES_REPORTS_OVERDUE_CUSTOMERS } from '@/graphql/operations/sales-
 // TODO: After running npm run codegen, replace useQuery with:
 // import { useOverdueCustomersQuery, OverdueCustomer } from '@/lib/graphql/generated';
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
+import { TablePaginationFooter } from '@/components/ui/TablePaginationFooter';
 import { toast } from 'sonner';
 
 export function OverdueCustomersView() {
   const [daysOverdue, setDaysOverdue] = useState(0);
   const [creditType, setCreditType] = useState<string | undefined>(undefined);
   const [page, setPage] = useState(1);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(20);
 
   const { data, loading, error, refetch } = useQuery<any>(GET_SALES_REPORTS_OVERDUE_CUSTOMERS, {
     variables: {
@@ -191,31 +192,18 @@ export function OverdueCustomersView() {
               </tbody>
             </table>
           </div>
+          <TablePaginationFooter
+            currentPage={page}
+            totalCount={customers.totalCount}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            pageSizeOptions={[10, 20, 50, 100]}
+            itemLabel="customers"
+            alwaysShow
+          />
         </CardBody>
       </Card>
-
-      {/* Pagination */}
-      {customers.totalCount > pageSize && (
-        <div className="flex justify-center gap-2">
-          <Button
-            variant="bordered"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            isDisabled={page === 1}
-          >
-            Previous
-          </Button>
-          <span className="flex items-center px-4">
-            Page {page} of {Math.ceil(customers.totalCount / pageSize)}
-          </span>
-          <Button
-            variant="bordered"
-            onClick={() => setPage((p) => p + 1)}
-            isDisabled={page >= Math.ceil(customers.totalCount / pageSize)}
-          >
-            Next
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

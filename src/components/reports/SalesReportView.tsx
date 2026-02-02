@@ -37,12 +37,11 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
   const requestState = useRequestState<any>({ data, loading, error, refetch });
 
   const handleExportCSV = () => {
-    if (!requestState.data?.salesReport) {
+    const report = requestState.data?.salesReportsSalesReport;
+    if (!report) {
       toast.error('No data to export');
       return;
     }
-
-    const report = requestState.data.salesReportsSalesReport;
     const exportData = {
       title: 'Sales Report',
       headers: ['Period', 'Revenue', 'Order Count'],
@@ -60,12 +59,11 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
   };
 
   const handleExportExcel = async () => {
-    if (!requestState.data?.salesReport) {
+    const report = requestState.data?.salesReportsSalesReport;
+    if (!report) {
       toast.error('No data to export');
       return;
     }
-
-    const report = requestState.data.salesReportsSalesReport;
     const exportData = {
       title: 'Sales Report',
       headers: ['Period', 'Revenue', 'Order Count'],
@@ -96,13 +94,13 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
         <div className="text-center py-12">No data available</div>
       ) : (
         <div className="space-y-6">
-      {/* Filters */}
+      {/* Filters — warehouse-based report; default All Warehouses for access to all */}
       <Card>
         <CardHeader>
           <h3 className="text-lg font-semibold">Filters</h3>
         </CardHeader>
         <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <Input
               type="date"
               label="Start Date"
@@ -115,6 +113,25 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
+            <Select
+              label="Warehouse"
+              placeholder="All Warehouses"
+              selectedKeys={warehouseId ? [warehouseId] : ['all']}
+              onSelectionChange={(keys) => {
+                const k = Array.from(keys)[0] as string;
+                setWarehouseId(k && k !== 'all' ? k : undefined);
+              }}
+              description="All warehouses by default"
+            >
+              <SelectItem key="all" textValue="All Warehouses">
+                All Warehouses
+              </SelectItem>
+              {(report?.revenueByWarehouse || []).map((w: { warehouseId: string; warehouseName: string }) => (
+                <SelectItem key={w.warehouseId} textValue={w.warehouseName}>
+                  {w.warehouseName}
+                </SelectItem>
+              ))}
+            </Select>
             <Select
               label="Group By"
               selectedKeys={[groupBy]}
