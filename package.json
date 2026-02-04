@@ -4,9 +4,9 @@
   "description": "Sales Reports Dashboard for Pulse Healthcare Supplies",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3006",
+    "dev": "next dev -p 3004",
     "build": "next build",
-    "start": "next start -p 3006",
+    "start": "next start -p 3004",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "codegen": "graphql-codegen --config codegen.sales-reports.yml && graphql-codegen --config codegen.auth.yml",

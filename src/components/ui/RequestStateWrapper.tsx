@@ -3,6 +3,7 @@
 import React, { ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { RequestState } from '@/lib/graphql/operations/types/response-types';
+import { ROUTES } from '@/config/routes';
 import { DashboardSkeleton, TableSkeleton, CardSkeleton, ListSkeleton, ReportChartSkeleton } from '@/components/loading-skeleton';
 
 interface RequestStateWrapperProps {
@@ -39,7 +40,7 @@ export function RequestStateWrapper({
     skeletonProps,
     onError,
     redirectOnAuthError = true,
-    redirectPath = '/login',
+    redirectPath = ROUTES.AUTH.LOGIN,
 }: RequestStateWrapperProps) {
     const router = useRouter();
 

@@ -197,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isRefreshing: false,
             });
             clearTokens();
-            router.push('/login');
+            router.push(ROUTES.AUTH.LOGIN);
             throw error;
         }
     }, [authState.refreshToken, authState.user, refreshMutation, processAuthResponse, router]);

@@ -3,6 +3,10 @@ const path = require('path');
 
 const nextConfig = {
   reactStrictMode: true,
+  // Production: no console.log/debug/info in browser (server logs only)
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? true : false,
+  },
   transpilePackages: ['@heroui/react', '@heroui/theme'],
   experimental: {
     optimizePackageImports: ['@heroui/react', 'lucide-react'],

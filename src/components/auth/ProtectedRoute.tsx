@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { ROUTES } from '@/config/routes';
 import { toast } from 'sonner';
 import { Spinner } from '@heroui/react';
 
@@ -33,7 +34,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
                 if (!isAuthenticated) {
                     // Not authenticated - redirect to login
                     setIsVerifying(false);
-                    router.replace('/login');
+                    router.replace(ROUTES.AUTH.LOGIN);
                     return;
                 }
 
@@ -55,7 +56,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
                         duration: 5000,
                     });
                     await logout();
-                    router.replace('/login');
+                    router.replace(ROUTES.AUTH.LOGIN);
                     return;
                 }
 
@@ -64,7 +65,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
             } catch (error) {
                 console.error('Auth verification error:', error);
                 await logout();
-                router.replace('/login');
+                router.replace(ROUTES.AUTH.LOGIN);
             } finally {
                 setIsVerifying(false);
             }
@@ -77,7 +78,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
             } else {
                 setIsVerifying(false);
                 setAuthVerified(false);
-                router.replace('/login');
+                router.replace(ROUTES.AUTH.LOGIN);
             }
         } else {
             setIsVerifying(true);

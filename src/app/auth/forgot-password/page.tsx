@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useForm } from '@/lib/form-hooks';
 import { commonRules } from '@/lib/form-validation';
+import { ThemeToggler } from '@/components/theme/ThemeToggler';
+import { ROUTES } from '@/config/routes';
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -97,7 +99,7 @@ export default function ForgotPasswordPage() {
       setSuccess(true);
       toast.success('Password reset successfully! You can now login with your new password.');
       setTimeout(() => {
-        router.push('/login');
+        router.push(ROUTES.AUTH.LOGIN);
       }, 2000);
     },
   });
@@ -121,9 +123,12 @@ export default function ForgotPasswordPage() {
   }, [resetForm.values.newPassword, resetForm.values.confirmPassword, resetForm.touched.confirmPassword]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4 relative">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggler />
+      </div>
       <div className="max-w-md w-full">
-        <Link href="/login" className="inline-flex items-center gap-2 text-default-600 hover:text-primary mb-6">
+        <Link href={ROUTES.AUTH.LOGIN} className="inline-flex items-center gap-2 text-default-600 hover:text-primary mb-6">
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Login</span>
         </Link>

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { ROUTES } from '@/config/routes';
 import { Spinner } from '@heroui/react';
 
 /**
@@ -20,7 +21,7 @@ export default function HomePage() {
       if (isAuthenticated) {
         router.replace('/dashboard');
       } else {
-        router.replace('/login');
+        router.replace(ROUTES.AUTH.LOGIN);
       }
     }
   }, [isAuthenticated, loading, router]);

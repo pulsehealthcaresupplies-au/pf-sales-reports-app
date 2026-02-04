@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { getAccessToken } from '@/lib/utils/authHeaders';
 import { getRefreshToken } from '@/lib/auth/token-manager';
+import { ThemeToggler } from '@/components/theme/ThemeToggler';
 
 /**
  * Login Page for Sales Reports App
@@ -143,7 +144,10 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-default-50 to-default-100 p-4">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-default-50 to-default-100 p-4 relative">
+            <div className="fixed top-4 right-4 z-50">
+                <ThemeToggler />
+            </div>
             <Card className="w-full max-w-md">
                 <CardHeader className="flex flex-col gap-1 px-6 pt-6">
                     <h1 className="text-2xl font-bold">Sales Reports</h1>

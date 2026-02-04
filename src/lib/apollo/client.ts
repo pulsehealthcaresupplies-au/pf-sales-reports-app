@@ -8,6 +8,7 @@ import { getMainDefinition } from '@apollo/client/utilities';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
 import { getGraphQLEndpoint, getWebSocketEndpoint } from '@/config/endpoints';
+import { ROUTES } from '@/config/routes';
 import {
   getAccessToken,
   getHashPhrase,
@@ -112,7 +113,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
                 console.log('❌ Refresh failed (no token), logging out...');
                 clearTokens();
                 if (typeof window !== 'undefined') {
-                  window.location.href = '/login';
+                  window.location.href = ROUTES.AUTH.LOGIN;
                 }
                 // Pass the original error
                 observer.error(err);
@@ -122,7 +123,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
               console.error('❌ Refresh failed with error, logging out...', e);
               clearTokens();
               if (typeof window !== 'undefined') {
-                window.location.href = '/login';
+                window.location.href = ROUTES.AUTH.LOGIN;
               }
               observer.error(e);
             });
@@ -140,12 +141,39 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
   }
 
   if (networkError) {
-    if ((networkError as any).statusCode === 401) {
-      console.log("🔒 Network auth error, logging out...");
-      clearTokens();
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+    const statusCode = (networkError as any).statusCode;
+    if (statusCode === 401) {
+      console.log('🔄 Network 401, attempting token refresh...');
+      return new Observable((observer) => {
+        refreshAccessToken()
+          .then((newToken) => {
+            if (newToken) {
+              const oldHeaders = operation.getContext().headers;
+              operation.setContext({
+                headers: { ...oldHeaders, authorization: `Bearer ${newToken}` },
+              });
+              forward(operation).subscribe({
+                next: observer.next.bind(observer),
+                error: observer.error.bind(observer),
+                complete: observer.complete.bind(observer),
+              });
+            } else {
+              clearTokens();
+              if (typeof window !== 'undefined' && window.location.pathname !== ROUTES.AUTH.LOGIN) {
+                window.location.href = ROUTES.AUTH.LOGIN;
+              }
+              observer.error(networkError);
+            }
+          })
+          .catch((e) => {
+            console.error('❌ Refresh failed:', e);
+            clearTokens();
+            if (typeof window !== 'undefined' && window.location.pathname !== ROUTES.AUTH.LOGIN) {
+              window.location.href = ROUTES.AUTH.LOGIN;
+            }
+            observer.error(e);
+          });
+      });
     }
 
     logger.error('Network error', {
@@ -154,6 +182,8 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
     });
     errorHandler.handleNetworkError(networkError);
   }
+
+  return forward(operation);
 });
 
 // Retry Link

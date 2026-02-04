@@ -60,7 +60,7 @@ make dev-sales-reports
 npm run dev
 ```
 
-The app will be available at **http://localhost:3006**
+The app will be available at **http://localhost:3004**
 
 ### Build and production
 
@@ -71,7 +71,7 @@ npm start
 
 ## Port
 
-This app runs on port **3006** by default.
+This app runs on port **3004** by default (Updated 2026-02-04).
 
 ## Authentication
 

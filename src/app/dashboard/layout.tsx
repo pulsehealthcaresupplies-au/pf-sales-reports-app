@@ -8,6 +8,7 @@ import { Button } from '@heroui/react';
 import { LogOut, User, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ROUTES } from '@/config/routes';
 
 /**
  * Dashboard Layout
@@ -29,7 +30,7 @@ export default function DashboardLayout({
     const handleLogout = async () => {
         try {
             await logout();
-            router.push('/login');
+            router.push(ROUTES.AUTH.LOGIN);
         } catch (error) {
             console.error('Logout error:', error);
         }
