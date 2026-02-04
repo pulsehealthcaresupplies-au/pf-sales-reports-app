@@ -3,6 +3,8 @@ const path = require('path');
 
 const nextConfig = {
   reactStrictMode: true,
+  // Enable standalone output for Docker (minimal production image)
+  output: 'standalone',
   // Production: no console.log/debug/info in browser (server logs only)
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? true : false,
