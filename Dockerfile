@@ -1,6 +1,6 @@
 # Next.js production Dockerfile (standalone output)
-# See: https://nextjs.org/docs/app/api-reference/next-config-js/output
-FROM node:18-alpine AS base
+# Next.js 15 requires Node >= 18.18; use Node 20 for consistency
+FROM node:20-alpine AS base
 
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
@@ -15,7 +15,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN cp next.config.docker.js next.config.js || true
+# Next.js 16 defaults to Turbopack; use webpack (next.config.docker.js)
+RUN npx next build --webpack
 
 FROM base AS runner
 WORKDIR /app
@@ -32,9 +34,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
-EXPOSE 3006
+EXPOSE 3004
 
-ENV PORT=3006
+ENV PORT=3004
 ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "server.js"]
