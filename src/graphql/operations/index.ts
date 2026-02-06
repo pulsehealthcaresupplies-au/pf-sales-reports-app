@@ -13,4 +13,4 @@ export * from './sales-reports-prefixed-operations';
 export * from './subscriptions';
 
 // Legacy operations (for backward compatibility)
-export * from '../lib/graphql/operations/queries/sales-reports-queries';
+export * from '../../lib/graphql/operations/queries/sales-reports-queries';

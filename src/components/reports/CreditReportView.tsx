@@ -115,7 +115,7 @@ export function CreditReportView() {
     );
   }
 
-  const report = data?.creditReport;
+  const report = data?.salesReportsCreditReport;
   if (!report) {
     return <div className="text-center py-12">No data available</div>;
   }

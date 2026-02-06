@@ -1,10 +1,29 @@
 /**
  * Endpoint configuration for Sales Reports App
  * GraphQL-only endpoints for queries, mutations, and subscriptions.
- * Client-side uses same-origin proxy (/api/graphql/sales-reports) to avoid CORS.
+ * Set NEXT_PUBLIC_API_URL (or NEXT_PUBLIC_API_GATEWAY_URL) and NEXT_PUBLIC_APP_URL in .env / .env.local.
  */
+function requireEnv(name: string, devDefault?: string): string {
+  const v = process.env[name];
+  const trimmed = v != null ? String(v).trim() : '';
+  if (trimmed) return trimmed;
+  if (devDefault) return devDefault;
+  throw new Error(`${name} is required. Set it in .env or .env.local.`);
+}
+const normalizeBaseUrl = (url: string): string => {
+  let n = url.replace(/\/+$/, '');
+  if (!n.startsWith('http://') && !n.startsWith('https://')) n = `http://${n}`;
+  return n;
+};
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// API base: NEXT_PUBLIC_API_URL preferred; NEXT_PUBLIC_API_GATEWAY_URL accepted (align with admin-dashboard).
+const API_BASE_URL = normalizeBaseUrl(
+  requireEnv(
+    'NEXT_PUBLIC_API_URL',
+    process.env.NEXT_PUBLIC_API_GATEWAY_URL?.trim() || 'http://localhost:8000'
+  )
+);
+const APP_URL = normalizeBaseUrl(requireEnv('NEXT_PUBLIC_APP_URL', 'http://localhost:3004'));
 const GRAPHQL_SALES_REPORTS_PATH = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || '/graphql/sales-reports';
 const GRAPHQL_PROXY_PATH = '/api/graphql/sales-reports';
 const GRAPHQL_AUTH_ENDPOINT = process.env.NEXT_PUBLIC_GRAPHQL_AUTH_ENDPOINT || '/graphql/auth';
@@ -18,6 +37,7 @@ const salesReportsFullUrl =
 
 export const endpoints = {
   apiBaseUrl: API_BASE_URL,
+  appUrl: APP_URL,
 
   graphql: {
     salesReports: {

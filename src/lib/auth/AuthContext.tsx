@@ -121,7 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             accessToken: string,
             refreshToken: string | null,
             user: User | null,
-            expiresAt: number | null
+            expiresAt: number | null,
+            hashPhrase?: string | null
         ) => {
             const expiresAtTimestamp = expiresAt || Date.now() + 3600000;
 
@@ -143,6 +144,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 refreshToken: refreshToken || '',
                 expiresAt: expiresAtTimestamp,
             });
+
+            if (hashPhrase != null) {
+                setHashPhrase(hashPhrase);
+            }
 
             // Persist user with key from auth-keys (same pattern as admin-dashboard)
             if (user) {
@@ -274,7 +279,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 console.log('📡 Login response:', { hasData: !!data, hasLogin: !!data?.login });
 
                 if (data?.login) {
-                    const { accessToken, refreshToken, expiresAt: expiresAtRaw, expiresIn, user } = data.login;
+                    const { accessToken, refreshToken, expiresAt: expiresAtRaw, expiresIn, user, hashPhrase } = data.login;
 
                     // SECURITY: Verify user has allowed role (case-insensitive to match backend)
                     const userRole = user?.role?.toUpperCase?.() ?? '';

@@ -18,7 +18,15 @@ export function ProfitReportView() {
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [groupBy, setGroupBy] = useState('day');
 
-  const { data, loading, error, refetch } = useQuery(GET_PROFIT_REPORT, {
+  type ProfitReportData = {
+    salesReportsProfitReport?: {
+      history?: Array<{ date?: string; revenue?: number; cost?: number; profit?: number; margin?: number }>;
+      summary?: { totalRevenue?: number; totalCost?: number; totalProfit?: number; grossProfit?: number; averageMargin?: number };
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  const { data, loading, error, refetch } = useQuery<ProfitReportData>(GET_SALES_REPORTS_PROFIT_REPORT, {
     variables: {
       startDate: `${startDate}T00:00:00Z`,
       endDate: `${endDate}T23:59:59Z`,
@@ -110,9 +118,9 @@ export function ProfitReportView() {
 
   // Profit vs Cost comparison
   const profitComparison = [
-    { name: 'Revenue', value: summary.totalRevenue },
-    { name: 'Cost', value: summary.totalCost },
-    { name: 'Profit', value: summary.grossProfit },
+    { name: 'Revenue', value: summary?.totalRevenue ?? 0 },
+    { name: 'Cost', value: summary?.totalCost ?? 0 },
+    { name: 'Profit', value: summary?.grossProfit ?? 0 },
   ];
 
   return (
@@ -161,7 +169,7 @@ export function ProfitReportView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-default-500">Total Revenue</p>
-                <p className="text-2xl font-bold">${(summary.totalRevenue || 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold">${(summary?.totalRevenue || 0).toLocaleString()}</p>
               </div>
               <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
                 <DollarSign className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -175,7 +183,7 @@ export function ProfitReportView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-default-500">Total Cost</p>
-                <p className="text-2xl font-bold">${(summary.totalCost || 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold">${(summary?.totalCost || 0).toLocaleString()}</p>
               </div>
               <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
                 <TrendingUp className="h-6 w-6 text-red-600 dark:text-red-400" />
@@ -189,7 +197,7 @@ export function ProfitReportView() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-default-500">Gross Profit</p>
-                <p className="text-2xl font-bold text-green-600">${(summary.grossProfit || 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-600">${(summary?.grossProfit || 0).toLocaleString()}</p>
               </div>
               <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <TrendingUp className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -204,7 +212,7 @@ export function ProfitReportView() {
               <div>
                 <p className="text-sm text-default-500">Average Margin</p>
                 <p className="text-2xl font-bold text-indigo-600">
-                  {((summary.averageMargin || 0) * 100).toFixed(1)}%
+                  {((summary?.averageMargin || 0) * 100).toFixed(1)}%
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
@@ -218,14 +226,14 @@ export function ProfitReportView() {
       {/* Export Buttons */}
       <div className="flex justify-end gap-2">
         <Button
-          variant="outline"
+          variant="bordered"
           startContent={<Download className="h-4 w-4" />}
           onPress={handleExportCSV}
         >
           Export CSV
         </Button>
         <Button
-          variant="outline"
+          variant="bordered"
           startContent={<FileSpreadsheet className="h-4 w-4" />}
           onPress={handleExportExcel}
         >
@@ -290,7 +298,7 @@ export function ProfitReportView() {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"

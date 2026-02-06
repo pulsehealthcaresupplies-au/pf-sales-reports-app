@@ -127,7 +127,7 @@ export function CustomerReportView() {
               <SelectItem key="B2C_CUSTOMER">B2C</SelectItem>
             </Select>
             <div className="flex items-end gap-2">
-              <Button color="primary" onClick={() => requestState.refetch()}>
+              <Button color="primary" onClick={() => requestState.refetch?.()}>
                 Generate Report
               </Button>
             </div>

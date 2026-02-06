@@ -142,7 +142,7 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
               <SelectItem key="month">Month</SelectItem>
             </Select>
             <div className="flex items-end gap-2">
-              <Button color="primary" onPress={() => requestState.refetch()}>
+              <Button color="primary" onPress={() => requestState.refetch?.()}>
                 Generate Report
               </Button>
             </div>

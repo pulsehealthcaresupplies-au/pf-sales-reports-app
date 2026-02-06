@@ -17,7 +17,7 @@ import {
   OVERDUE_CUSTOMER_FRAGMENT,
   DUE_SOON_CUSTOMER_FRAGMENT,
   CREDIT_DASHBOARD_SUMMARY_FRAGMENT,
-} from '../fragments';
+} from '../../lib/graphql/operations/fragments';
 
 /**
  * Prefix-Based Sales Reports GraphQL Operations
