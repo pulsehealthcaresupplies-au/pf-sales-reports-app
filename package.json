@@ -13,7 +13,8 @@
     "codegen:sales-reports": "graphql-codegen --config codegen.sales-reports.yml",
     "codegen:auth": "graphql-codegen --config codegen.auth.yml",
     "codegen:watch": "graphql-codegen --config codegen.sales-reports.yml --watch",
-    "codegen:sync": "npm run codegen"
+    "codegen:sync": "npm run codegen",
+    "generate:all": "npm run codegen"
   },
   "dependencies": {
     "@apollo/client": "^4.0.11",

@@ -50,6 +50,7 @@ export function clearAllAuthData(): void {
   // Clear sessionStorage (if any auth data is stored there)
   sessionStorage.removeItem(keys.accessToken);
   sessionStorage.removeItem(keys.refreshToken);
+  sessionStorage.removeItem(keys.expiresAt);
   sessionStorage.removeItem(keys.user);
   if (keys.hashPhrase) sessionStorage.removeItem(keys.hashPhrase);
 

@@ -573,3 +573,65 @@ export type GetCreditSummaryQueryHookResult = ReturnType<typeof useGetCreditSumm
 export type GetCreditSummaryLazyQueryHookResult = ReturnType<typeof useGetCreditSummaryLazyQuery>;
 export type GetCreditSummarySuspenseQueryHookResult = ReturnType<typeof useGetCreditSummarySuspenseQuery>;
 export type GetCreditSummaryQueryResult = Apollo.QueryResult<Types.GetCreditSummaryQuery, Types.GetCreditSummaryQueryVariables>;
+export const GetProfitReportDocument = gql`
+    query GetProfitReport($startDate: String, $endDate: String, $groupBy: String) {
+  profitReport(startDate: $startDate, endDate: $endDate, groupBy: $groupBy) {
+    period {
+      startDate
+      endDate
+      groupBy
+    }
+    summary {
+      totalRevenue
+      totalCost
+      grossProfit
+      averageMargin
+    }
+    history {
+      date
+      revenue
+      cost
+      profit
+      margin
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetProfitReportQuery__
+ *
+ * To run a query within a React component, call `useGetProfitReportQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetProfitReportQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetProfitReportQuery({
+ *   variables: {
+ *      startDate: // value for 'startDate'
+ *      endDate: // value for 'endDate'
+ *      groupBy: // value for 'groupBy'
+ *   },
+ * });
+ */
+export function useGetProfitReportQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<Types.GetProfitReportQuery, Types.GetProfitReportQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<Types.GetProfitReportQuery, Types.GetProfitReportQueryVariables>(GetProfitReportDocument, options);
+      }
+export function useGetProfitReportLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<Types.GetProfitReportQuery, Types.GetProfitReportQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<Types.GetProfitReportQuery, Types.GetProfitReportQueryVariables>(GetProfitReportDocument, options);
+        }
+// @ts-ignore
+export function useGetProfitReportSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<Types.GetProfitReportQuery, Types.GetProfitReportQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<Types.GetProfitReportQuery, Types.GetProfitReportQueryVariables>;
+export function useGetProfitReportSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<Types.GetProfitReportQuery, Types.GetProfitReportQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<Types.GetProfitReportQuery | undefined, Types.GetProfitReportQueryVariables>;
+export function useGetProfitReportSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<Types.GetProfitReportQuery, Types.GetProfitReportQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<Types.GetProfitReportQuery, Types.GetProfitReportQueryVariables>(GetProfitReportDocument, options);
+        }
+export type GetProfitReportQueryHookResult = ReturnType<typeof useGetProfitReportQuery>;
+export type GetProfitReportLazyQueryHookResult = ReturnType<typeof useGetProfitReportLazyQuery>;
+export type GetProfitReportSuspenseQueryHookResult = ReturnType<typeof useGetProfitReportSuspenseQuery>;
+export type GetProfitReportQueryResult = Apollo.QueryResult<Types.GetProfitReportQuery, Types.GetProfitReportQueryVariables>;

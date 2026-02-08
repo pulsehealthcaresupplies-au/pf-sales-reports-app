@@ -17,15 +17,24 @@ export const metadata: Metadata = {
   description: 'Sales Reports Dashboard for Pulse Healthcare Supplies',
 };
 
+function getApiBaseUrl(): string {
+  const url =
+    process.env.NEXT_PUBLIC_API_URL ??
+    process.env.NEXT_PUBLIC_API_GATEWAY_URL ??
+    '';
+  return (url || '').trim().replace(/\/+$/, '');
+}
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const apiBaseUrl = getApiBaseUrl();
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body className={inter.className} suppressHydrationWarning>
-        <DynamicProviders>{children}</DynamicProviders>
+        <DynamicProviders apiBaseUrl={apiBaseUrl}>{children}</DynamicProviders>
       </body>
     </html>
   );

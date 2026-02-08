@@ -36,11 +36,14 @@ export function SalesReportsDashboard() {
   // Sync tab with URL parameter
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && validTabs.includes(tab)) {
-      setSelectedTab(tab);
-    } else if (!tab) {
-      setSelectedTab('sales');
-    }
+    // Defer setState to avoid synchronous state updates in effects
+    queueMicrotask(() => {
+      if (tab && validTabs.includes(tab)) {
+        setSelectedTab(tab);
+      } else if (!tab) {
+        setSelectedTab('sales');
+      }
+    });
   }, [searchParams]);
 
   const handleTabChange = (key: string | number) => {

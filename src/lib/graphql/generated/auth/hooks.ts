@@ -17,6 +17,7 @@ export const LoginDocument = gql`
     accessToken
     refreshToken
     expiresAt
+    hashPhrase
     user {
       id
       email
@@ -65,6 +66,7 @@ export const RefreshTokenDocument = gql`
     accessToken
     refreshToken
     expiresAt
+    hashPhrase
     user {
       id
       email

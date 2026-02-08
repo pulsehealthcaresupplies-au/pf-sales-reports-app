@@ -6,9 +6,11 @@ import { getApolloClient } from '@/lib/apollo/client';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { ThemeProvider } from '@/lib/theme/ThemeProvider';
 import { Toaster } from 'sonner';
+import { BackendHealthGate } from '@/components/BackendHealthGate';
 
 interface ProvidersProps {
   children: ReactNode;
+  apiBaseUrl?: string;
 }
 
 /**
@@ -22,11 +24,14 @@ interface ProvidersProps {
  * 
  * SECURITY: Providers are ordered to ensure proper authentication flow
  */
-export function Providers({ children }: ProvidersProps) {
+export function Providers({ children, apiBaseUrl = '' }: ProvidersProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Defer setState to avoid synchronous state updates in effects
+    queueMicrotask(() => {
+      setMounted(true);
+    });
   }, []);
 
   // Prevent hydration mismatch
@@ -35,13 +40,15 @@ export function Providers({ children }: ProvidersProps) {
   }
 
   return (
-    <ThemeProvider>
-      <ApolloProvider client={getApolloClient()}>
-        <AuthProvider>
-          {children}
-          <Toaster position="top-right" richColors />
-        </AuthProvider>
-      </ApolloProvider>
-    </ThemeProvider>
+    <BackendHealthGate apiBaseUrl={apiBaseUrl}>
+      <ThemeProvider>
+        <ApolloProvider client={getApolloClient()}>
+          <AuthProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </AuthProvider>
+        </ApolloProvider>
+      </ThemeProvider>
+    </BackendHealthGate>
   );
 }

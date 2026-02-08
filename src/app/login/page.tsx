@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { Button } from '@heroui/react';
-import { Input } from '@heroui/react';
-import { Card, CardBody, CardHeader } from '@heroui/react';
+import { Button, Input, Card, CardBody, CardHeader, Checkbox } from '@heroui/react';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { getAccessToken } from '@/lib/utils/authHeaders';
@@ -29,10 +27,26 @@ export default function LoginPage() {
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(() => {
+        if (typeof window === 'undefined') return false;
+        try {
+            return localStorage.getItem('sales-reports-remember-me') === 'true';
+        } catch {
+            return false;
+        }
+    });
     const [isVisible, setIsVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            if (rememberMe) localStorage.setItem('sales-reports-remember-me', 'true');
+            else localStorage.removeItem('sales-reports-remember-me');
+        } catch (_) {}
+    }, [rememberMe]);
 
     const toggleVisibility = () => setIsVisible(!isVisible);
 
@@ -85,8 +99,7 @@ export default function LoginPage() {
                 finalEmail = '+' + cleaned;
             }
 
-            // Attempt login (supports email or phone)
-            await login(finalEmail, password);
+            await login(finalEmail, password, rememberMe);
 
             // Set HttpOnly cookies via API route for middleware (token-manager = single source, same as admin-dashboard)
             try {
@@ -168,19 +181,13 @@ export default function LoginPage() {
                             label="Email or Phone Number"
                             placeholder="your.email@example.com or +61 4XX XXX XXX"
                             value={email}
-                            onChange={(e) => {
-                                setEmail(e.target.value);
-                                // Clear field error when user starts typing
-                                if (fieldErrors.email) {
-                                    setFieldErrors({ ...fieldErrors, email: undefined });
-                                }
+                            onValueChange={(value) => {
+                                setEmail(value ?? '');
+                                setFieldErrors((prev) => (prev.email ? { ...prev, email: undefined } : prev));
                             }}
                             onBlur={() => {
-                                // Validate on blur
                                 const emailError = validateEmailOrPhone(email);
-                                if (emailError) {
-                                    setFieldErrors({ ...fieldErrors, email: emailError });
-                                }
+                                setFieldErrors((prev) => (emailError ? { ...prev, email: emailError } : { ...prev, email: undefined }));
                             }}
                             startContent={<Mail className="h-4 w-4 text-default-400" />}
                             description="Enter your email address or phone number (e.g., +61 4XX XXX XXX)"
@@ -196,18 +203,13 @@ export default function LoginPage() {
                             label="Password"
                             placeholder="Enter your password"
                             value={password}
-                            onChange={(e) => {
-                                setPassword(e.target.value);
-                                // Clear field error when user starts typing
-                                if (fieldErrors.password) {
-                                    setFieldErrors({ ...fieldErrors, password: undefined });
-                                }
+                            onValueChange={(value) => {
+                                setPassword(value ?? '');
+                                setFieldErrors((prev) => (prev.password ? { ...prev, password: undefined } : prev));
                             }}
                             onBlur={() => {
-                                // Validate on blur
-                                if (!password || password.trim() === '') {
-                                    setFieldErrors({ ...fieldErrors, password: 'Password is required' });
-                                }
+                                const passwordError = !password || password.trim() === '' ? 'Password is required' : null;
+                                setFieldErrors((prev) => (passwordError ? { ...prev, password: passwordError } : { ...prev, password: undefined }));
                             }}
                             startContent={<Lock className="h-4 w-4 text-default-400" />}
                             endContent={
@@ -231,6 +233,16 @@ export default function LoginPage() {
                             autoComplete="current-password"
                         />
 
+                        <div className="flex justify-between items-center">
+                            <Checkbox
+                                isSelected={rememberMe}
+                                onValueChange={setRememberMe}
+                                size="sm"
+                            >
+                                Remember me
+                            </Checkbox>
+                        </div>
+
                         <Button
                             type="submit"
                             color="primary"
@@ -249,6 +261,8 @@ export default function LoginPage() {
                             onClick={() => {
                                 setEmail('sales@pulse.com');
                                 setPassword('sales123');
+                                setFieldErrors({});
+                                setError(null);
                             }}
                         >
                             <p className="text-[10px] font-bold text-primary-500 mb-2 uppercase tracking-widest">

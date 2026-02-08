@@ -5,6 +5,7 @@ import { Providers } from '@/components/providers/Providers';
 
 interface DynamicProvidersProps {
   children: ReactNode;
+  apiBaseUrl?: string;
 }
 
 /**
@@ -12,6 +13,6 @@ interface DynamicProvidersProps {
  * Uses direct import (no dynamic + ssr:false) to avoid ChunkLoadError.
  * Providers already guards with mounted state to prevent hydration mismatch.
  */
-export function DynamicProviders({ children }: DynamicProvidersProps) {
-  return <Providers>{children}</Providers>;
+export function DynamicProviders({ children, apiBaseUrl = '' }: DynamicProvidersProps) {
+  return <Providers apiBaseUrl={apiBaseUrl}>{children}</Providers>;
 }

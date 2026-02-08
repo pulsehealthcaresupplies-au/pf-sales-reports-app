@@ -1,21 +1,21 @@
 /**
  * Authentication Headers Utility for Sales Reports App
  *
- * Same pattern as admin-dashboard: all keys come from @/lib/auth/auth-keys only.
- * No local key constants; getAccessToken/clearAuthTokens use getAuthKeys() and clearAllAuthData().
+ * Uses token-manager for getAccessToken so session respects "Remember me" (localStorage vs sessionStorage).
+ * clearAuthTokens uses clearAllAuthData from auth-keys.
  */
 
-import { getAuthKeys, clearAllAuthData } from '@/lib/auth/auth-keys';
+import { clearAllAuthData } from '@/lib/auth/auth-keys';
+import { getAccessToken as getAccessTokenFromTokenManager } from '@/lib/auth/token-manager';
 
 const APP_NAME_HEADER = 'SALES_REPORTS';
 
 /**
- * Get the access token (prefixed key from auth-keys)
+ * Get the access token (from storage chosen by "Remember me" via token-manager)
  */
 export function getAccessToken(): string | null {
-  if (typeof window === 'undefined') return null;
   try {
-    const token = localStorage.getItem(getAuthKeys().accessToken);
+    const token = getAccessTokenFromTokenManager();
     return token?.trim() || null;
   } catch (error) {
     console.error('Error getting access token:', error);

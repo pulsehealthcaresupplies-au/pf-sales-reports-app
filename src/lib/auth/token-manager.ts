@@ -7,11 +7,17 @@
 import { getAuthKeys, clearAllAuthData } from './auth-keys';
 
 const AUTH_KEYS = getAuthKeys();
+const REMEMBER_ME_KEY = 'sales-reports-remember-me';
 
 const ACCESS_TOKEN_KEY = AUTH_KEYS.accessToken;
 const REFRESH_TOKEN_KEY = AUTH_KEYS.refreshToken;
 const USER_KEY = AUTH_KEYS.user;
 const TOKEN_EXPIRY_KEY = AUTH_KEYS.expiresAt;
+
+export function getAuthStorage(): Storage | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(REMEMBER_ME_KEY) === 'true' ? localStorage : sessionStorage;
+}
 
 // Token refresh threshold: refresh 5 minutes before expiration
 const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
@@ -37,18 +43,15 @@ const deleteCookie = (name: string) => {
     document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
 };
 
-/**
- * Store tokens securely in localStorage and Cookies
- */
 export const setTokens = (tokenData: TokenData): void => {
-    if (typeof window === 'undefined') return;
+    const storage = getAuthStorage();
+    if (!storage) return;
 
-    localStorage.setItem(ACCESS_TOKEN_KEY, tokenData.accessToken);
+    storage.setItem(ACCESS_TOKEN_KEY, tokenData.accessToken);
     if (tokenData.refreshToken) {
-        localStorage.setItem(REFRESH_TOKEN_KEY, tokenData.refreshToken);
+        storage.setItem(REFRESH_TOKEN_KEY, tokenData.refreshToken);
     }
 
-    // Calculate and store expiry
     let expiryTime = 0;
     if (tokenData.expiresAt) {
         expiryTime = tokenData.expiresAt;
@@ -57,11 +60,10 @@ export const setTokens = (tokenData: TokenData): void => {
     }
 
     if (expiryTime > 0) {
-        localStorage.setItem(TOKEN_EXPIRY_KEY, expiryTime.toString());
+        storage.setItem(TOKEN_EXPIRY_KEY, expiryTime.toString());
     }
 
-    // Set Cookie for Middleware
-    const maxAge = 7 * 24 * 60 * 60; // 7 days
+    const maxAge = 7 * 24 * 60 * 60;
     setCookie(ACCESS_TOKEN_KEY, tokenData.accessToken, maxAge);
 };
 
@@ -69,35 +71,30 @@ export const setTokens = (tokenData: TokenData): void => {
  * Get current access token
  */
 export const getAccessToken = (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
+    const storage = getAuthStorage();
+    return storage ? storage.getItem(ACCESS_TOKEN_KEY) : null;
 };
 
-/**
- * Get refresh token
- */
 export const getRefreshToken = (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
+    const storage = getAuthStorage();
+    return storage ? storage.getItem(REFRESH_TOKEN_KEY) : null;
 };
 
 /**
  * Get hash phrase (secure verification header); prefixed key only
  */
 export const getHashPhrase = (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(AUTH_KEYS.hashPhrase);
+    const storage = getAuthStorage();
+    return storage ? storage.getItem(AUTH_KEYS.hashPhrase) : null;
 };
 
-/**
- * Set or clear hash phrase (from login/refresh; cleared on logout)
- */
 export const setHashPhrase = (hashPhrase: string | null): void => {
-    if (typeof window === 'undefined') return;
+    const storage = getAuthStorage();
+    if (!storage) return;
     if (hashPhrase?.trim()) {
-        localStorage.setItem(AUTH_KEYS.hashPhrase, hashPhrase.trim());
+        storage.setItem(AUTH_KEYS.hashPhrase, hashPhrase.trim());
     } else {
-        localStorage.removeItem(AUTH_KEYS.hashPhrase);
+        storage.removeItem(AUTH_KEYS.hashPhrase);
     }
 };
 
@@ -116,24 +113,19 @@ export const clearTokens = (): void => {
  * Check if current token is expired or about to expire
  */
 export const isTokenExpired = (): boolean => {
-    if (typeof window === 'undefined') return true;
-
-    const expiryTime = localStorage.getItem(TOKEN_EXPIRY_KEY);
+    const storage = getAuthStorage();
+    if (!storage) return true;
+    const expiryTime = storage.getItem(TOKEN_EXPIRY_KEY);
     if (!expiryTime) return true;
-
     const timeUntilExpiry = parseInt(expiryTime, 10) - Date.now();
     return timeUntilExpiry <= 0;
 };
 
-/**
- * Check if token needs refresh (within threshold)
- */
 export const shouldRefreshToken = (): boolean => {
-    if (typeof window === 'undefined') return false;
-
-    const expiryTime = localStorage.getItem(TOKEN_EXPIRY_KEY);
+    const storage = getAuthStorage();
+    if (!storage) return false;
+    const expiryTime = storage.getItem(TOKEN_EXPIRY_KEY);
     if (!expiryTime) return false;
-
     const timeUntilExpiry = parseInt(expiryTime, 10) - Date.now();
     return timeUntilExpiry <= REFRESH_THRESHOLD_MS && timeUntilExpiry > 0;
 };
@@ -215,9 +207,9 @@ export const refreshAccessToken = async (): Promise<string | null> => {
 
         setTokens(tokenData);
 
-        // Also store user data if returned (same as login)
         if (user && typeof window !== 'undefined') {
-            localStorage.setItem(USER_KEY, JSON.stringify(user));
+            const storage = getAuthStorage();
+            if (storage) storage.setItem(USER_KEY, JSON.stringify(user));
         }
 
         // Set cookies for middleware (same as login)

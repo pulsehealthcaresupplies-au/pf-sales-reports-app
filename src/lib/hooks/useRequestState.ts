@@ -79,20 +79,29 @@ export function useRequestState<T>(
 
     // Update state based on query result
     useEffect(() => {
+        // Defer setState calls to avoid synchronous state updates in effects
         if (normalizedResult.loading) {
-            setState('loading');
-            setError(null);
+            queueMicrotask(() => {
+                setState('loading');
+                setError(null);
+            });
         } else if (normalizedResult.error) {
-            setState('error');
-            const err = normalizedResult.error instanceof Error ? normalizedResult.error : new Error(String(normalizedResult.error));
-            setError(err);
-            onError?.(err);
+            queueMicrotask(() => {
+                setState('error');
+                const err = normalizedResult.error instanceof Error ? normalizedResult.error : new Error(String(normalizedResult.error));
+                setError(err);
+                onError?.(err);
+            });
         } else if (normalizedResult.data) {
-            setState('success');
-            setError(null);
-            onSuccess?.(normalizedResult.data);
+            queueMicrotask(() => {
+                setState('success');
+                setError(null);
+                onSuccess?.(normalizedResult.data);
+            });
         } else {
-            setState('idle');
+            queueMicrotask(() => {
+                setState('idle');
+            });
         }
     }, [normalizedResult.loading, normalizedResult.error, normalizedResult.data, onSuccess, onError]);
 
@@ -145,20 +154,29 @@ export function useMutationState<TData, TVariables = Record<string, any>>(
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
+        // Defer setState calls to avoid synchronous state updates in effects
         if (mutationResult.loading) {
-            setState('loading');
-            setError(null);
+            queueMicrotask(() => {
+                setState('loading');
+                setError(null);
+            });
         } else if (mutationResult.error) {
-            setState('error');
-            const err = new Error(mutationResult.error.message || 'An error occurred');
-            setError(err);
-            onError?.(err);
+            queueMicrotask(() => {
+                setState('error');
+                const err = new Error(mutationResult.error.message || 'An error occurred');
+                setError(err);
+                onError?.(err);
+            });
         } else if (mutationResult.data) {
-            setState('success');
-            setError(null);
-            onSuccess?.(mutationResult.data);
+            queueMicrotask(() => {
+                setState('success');
+                setError(null);
+                onSuccess?.(mutationResult.data);
+            });
         } else {
-            setState('idle');
+            queueMicrotask(() => {
+                setState('idle');
+            });
         }
     }, [mutationResult.loading, mutationResult.error, mutationResult.data, onSuccess, onError]);
 

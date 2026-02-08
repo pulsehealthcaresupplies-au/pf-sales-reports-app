@@ -11,6 +11,7 @@ import {
     setHashPhrase,
     refreshAccessToken as managerRefresh,
     getAccessToken,
+    getAuthStorage,
     isTokenExpired
 } from './token-manager';
 import { setTokenGetter } from '@/lib/apollo/client';
@@ -37,7 +38,7 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-    login: (emailOrPhone: string, password: string) => Promise<void>; // Supports email or phone
+    login: (emailOrPhone: string, password: string, rememberMe?: boolean) => Promise<void>;
     logout: () => Promise<void>;
     logoutAllDevices: () => Promise<void>;
     refreshAccessToken: () => Promise<string>;
@@ -149,9 +150,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setHashPhrase(hashPhrase);
             }
 
-            // Persist user with key from auth-keys (same pattern as admin-dashboard)
             if (user) {
-                localStorage.setItem(getAuthKeys().user, JSON.stringify(user));
+                const storage = getAuthStorage();
+                if (storage) storage.setItem(getAuthKeys().user, JSON.stringify(user));
             }
         },
         []
@@ -217,15 +218,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearTokens();
     }, []);
 
-    // Load auth state from localStorage on mount
+    // Load auth state from storage (chosen by "Remember me") on mount
     useEffect(() => {
         const loadAuthState = () => {
             try {
                 const keys = getAuthKeys();
-                const accessToken = getAccessToken();
-                const userStr = localStorage.getItem(keys.user);
-                const refreshToken = localStorage.getItem(keys.refreshToken);
-                const expiresAt = localStorage.getItem(keys.expiresAt);
+                const storage = getAuthStorage();
+                if (!storage) {
+                    setIsInitialized(true);
+                    return;
+                }
+                const accessToken = storage.getItem(keys.accessToken);
+                const userStr = storage.getItem(keys.user);
+                const refreshToken = storage.getItem(keys.refreshToken);
+                const expiresAt = storage.getItem(keys.expiresAt);
 
                 if (accessToken && refreshToken && expiresAt) {
                     const user = userStr ? JSON.parse(userStr) : null;
@@ -257,37 +263,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loadAuthState();
     }, [clearAuthState]);
 
-    // Login function with role validation - supports email or phone
     const login = useCallback(
-        async (email: string, password: string) => {
+        async (email: string, password: string, rememberMe?: boolean) => {
             try {
-                // Determine if input is email or phone
                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 const isEmail = emailPattern.test(email);
 
-                console.log('🔐 Sales Reports Login attempt:', { email, isEmail });
                 const { data } = await loginMutation({
                     variables: {
-                        username: !isEmail ? email : undefined, // Phone number
-                        email: isEmail ? email : undefined, // Email
+                        username: !isEmail ? email : undefined,
+                        email: isEmail ? email : undefined,
                         password,
-                        requireOtp: false, // OTP disabled for now
+                        requireOtp: false,
                         app: 'SALES_REPORTS',
                     },
                     context: { endpoint: getGraphQLEndpointPath('sales-reports') },
                 }) as any;
-                console.log('📡 Login response:', { hasData: !!data, hasLogin: !!data?.login });
 
                 if (data?.login) {
                     const { accessToken, refreshToken, expiresAt: expiresAtRaw, expiresIn, user, hashPhrase } = data.login;
 
-                    // SECURITY: Verify user has allowed role (case-insensitive to match backend)
                     const userRole = user?.role?.toUpperCase?.() ?? '';
                     if (!userRole || !ALLOWED_ROLES.includes(userRole)) {
                         throw new Error('Access denied. Your role does not have permission to access Sales Reports.');
                     }
 
-                    // Handle expiresAt
+                    if (typeof window !== 'undefined' && rememberMe !== undefined) {
+                        localStorage.setItem('sales-reports-remember-me', rememberMe ? 'true' : 'false');
+                    }
+
                     let expiresAt: number;
                     if (expiresAtRaw) {
                         expiresAt = expiresAtRaw > 1000000000000 ? expiresAtRaw : expiresAtRaw * 1000;
