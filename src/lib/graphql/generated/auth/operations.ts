@@ -4182,14 +4182,12 @@ export type VerificationStatusResponse = {
 export type Warehouse = {
   __typename?: 'Warehouse';
   address?: Maybe<Address>;
-  capacity?: Maybe<Scalars['Int']['output']>;
   code?: Maybe<Scalars['String']['output']>;
   contactEmail?: Maybe<Scalars['String']['output']>;
   contactPhone?: Maybe<Scalars['String']['output']>;
   controlledSubstanceLicensed: Scalars['Boolean']['output'];
   createdAt: Scalars['DateTime']['output'];
   createdBy?: Maybe<User>;
-  currentUtilization: Scalars['Float']['output'];
   deletedAt?: Maybe<Scalars['DateTime']['output']>;
   description?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
@@ -4210,8 +4208,10 @@ export type Warehouse = {
   status?: Maybe<Scalars['String']['output']>;
   temperatureControlled: Scalars['Boolean']['output'];
   timezone: Scalars['String']['output'];
+  totalCapacity?: Maybe<Scalars['Float']['output']>;
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
   updatedBy?: Maybe<User>;
+  usedCapacity?: Maybe<Scalars['Float']['output']>;
   warehouseType: WarehouseType;
   zones: Array<WarehouseZone>;
 };
@@ -4269,24 +4269,18 @@ export type WarehouseListResponse = {
 
 export type WarehouseLocation = {
   __typename?: 'WarehouseLocation';
-  aisle?: Maybe<Scalars['String']['output']>;
-  barcode?: Maybe<Scalars['String']['output']>;
   bin?: Maybe<Scalars['String']['output']>;
-  capacity?: Maybe<Scalars['Int']['output']>;
-  code?: Maybe<Scalars['String']['output']>;
+  code: Scalars['String']['output'];
+  column?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['String']['output'];
-  currentQuantity: Scalars['Int']['output'];
-  currentUtilization: Scalars['Float']['output'];
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
   isDeleted?: Maybe<Scalars['Boolean']['output']>;
-  isReserved: Scalars['Boolean']['output'];
+  level?: Maybe<Scalars['String']['output']>;
   locationType: LocationType;
   name?: Maybe<Scalars['String']['output']>;
-  reservedFor?: Maybe<Scalars['ID']['output']>;
-  reservedUntil?: Maybe<Scalars['String']['output']>;
-  shelf?: Maybe<Scalars['String']['output']>;
+  row?: Maybe<Scalars['String']['output']>;
   updatedAt: Scalars['String']['output'];
   zone: Scalars['ID']['output'];
 };
@@ -4454,25 +4448,16 @@ export type WarehouseUser = AuthUser & {
 
 export type WarehouseZone = {
   __typename?: 'WarehouseZone';
-  accessLevel?: Maybe<Scalars['String']['output']>;
-  capacity?: Maybe<Scalars['Int']['output']>;
   code: Scalars['String']['output'];
   createdAt: Scalars['String']['output'];
-  currentUtilization: Scalars['Float']['output'];
   description?: Maybe<Scalars['String']['output']>;
-  humidityMax?: Maybe<Scalars['Float']['output']>;
-  humidityMin?: Maybe<Scalars['Float']['output']>;
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
   isDeleted?: Maybe<Scalars['Boolean']['output']>;
   locations: Array<WarehouseLocation>;
   name: Scalars['String']['output'];
-  requiresSpecialAccess: Scalars['Boolean']['output'];
-  temperatureMax?: Maybe<Scalars['Float']['output']>;
-  temperatureMin?: Maybe<Scalars['Float']['output']>;
   updatedAt: Scalars['String']['output'];
   warehouse: Scalars['ID']['output'];
-  zoneType: ZoneType;
 };
 
 export type WishlistStats = {

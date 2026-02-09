@@ -5,8 +5,6 @@
 
 'use client';
 
-const PULSE_TEAL = '#0e9fb8';
-
 export interface LoaderProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
@@ -22,6 +20,7 @@ function cn(...classes: (string | undefined | false)[]) {
 
 const LOGO_SRC = '/assets/pulse-logo.png';
 
+/** Theme-based loader: bar uses primary, track uses muted (respects light/dark and app theme). */
 export function PulseHealthLoader({
   size = 'md',
   className = '',
@@ -40,15 +39,11 @@ export function PulseHealthLoader({
         style={{ width: logoWidth, height: 'auto' }}
       />
       <div
-        className="relative overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
+        className="relative overflow-hidden rounded-full bg-muted"
         style={{ width: barWidth, height: 4 }}
       >
         <div
-          className="loading-bar absolute inset-y-0 rounded-full"
-          style={{
-            width: '30%',
-            backgroundColor: PULSE_TEAL,
-          }}
+          className="loading-bar absolute inset-y-0 left-0 w-[30%] rounded-full bg-primary"
         />
       </div>
       <p className="text-sm font-medium text-center text-foreground/80 loading-fade-in max-w-xs min-h-[1.25rem]">
