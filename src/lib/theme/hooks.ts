@@ -13,7 +13,8 @@ export function useTheme() {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        setMounted(true);
+        const id = requestAnimationFrame(() => setMounted(true));
+        return () => cancelAnimationFrame(id);
     }, []);
 
     const currentTheme = (theme as ThemeMode) || 'system';

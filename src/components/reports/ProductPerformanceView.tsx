@@ -14,9 +14,16 @@ import { GET_SALES_REPORTS_PRODUCT_PERFORMANCE_REPORT } from '@/graphql/operatio
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
 import { toast } from 'sonner';
 
+function getDefaultStartDate(): string {
+  return format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+}
+function getDefaultEndDate(): string {
+  return format(new Date(), 'yyyy-MM-dd');
+}
+
 export function ProductPerformanceView() {
-  const [startDate, setStartDate] = useState(format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'));
-  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [startDate, setStartDate] = useState(getDefaultStartDate);
+  const [endDate, setEndDate] = useState(getDefaultEndDate);
   const [limit, setLimit] = useState(20);
 
   const { data, loading, error, refetch } = useQuery<any>(GET_SALES_REPORTS_PRODUCT_PERFORMANCE_REPORT, {

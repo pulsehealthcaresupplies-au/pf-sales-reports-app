@@ -7,7 +7,7 @@
  * Supports both standard Apollo Client query results and Next.js App Router Result types.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { ApolloQueryResult } from '@apollo/client';
 import type { RequestState, RequestStateHook } from '@/lib/graphql/operations/types/response-types';
 
@@ -105,11 +105,14 @@ export function useRequestState<T>(
         }
     }, [normalizedResult.loading, normalizedResult.error, normalizedResult.data, onSuccess, onError]);
 
+    const refetchFnRef = useRef(normalizedResult.refetch);
+    refetchFnRef.current = normalizedResult.refetch;
+
     // Auto-refetch functionality
     useEffect(() => {
         if (autoRefetch && refetchInterval && normalizedResult.refetch) {
             const interval = setInterval(() => {
-                normalizedResult.refetch?.();
+                refetchFnRef.current?.();
             }, refetchInterval);
 
             return () => clearInterval(interval);
@@ -117,16 +120,17 @@ export function useRequestState<T>(
     }, [autoRefetch, refetchInterval, normalizedResult.refetch]);
 
     const refetch = useCallback(async () => {
-        if (normalizedResult.refetch) {
+        const fn = refetchFnRef.current;
+        if (fn) {
             setState('loading');
             try {
-                await normalizedResult.refetch();
+                await fn();
             } catch (err) {
                 setState('error');
                 setError(err instanceof Error ? err : new Error('Refetch failed'));
             }
         }
-    }, [normalizedResult.refetch]);
+    }, []);
 
     return {
         data: normalizedResult.data ?? null,
@@ -163,15 +167,16 @@ export function useMutationState<TData, TVariables = Record<string, any>>(
         } else if (mutationResult.error) {
             queueMicrotask(() => {
                 setState('error');
-                const err = new Error(mutationResult.error.message || 'An error occurred');
+                const err = new Error(mutationResult.error?.message ?? 'An error occurred');
                 setError(err);
                 onError?.(err);
             });
-        } else if (mutationResult.data) {
+        } else if (mutationResult.data != null) {
+            const data = mutationResult.data;
             queueMicrotask(() => {
                 setState('success');
                 setError(null);
-                onSuccess?.(mutationResult.data);
+                onSuccess?.(data);
             });
         } else {
             queueMicrotask(() => {
