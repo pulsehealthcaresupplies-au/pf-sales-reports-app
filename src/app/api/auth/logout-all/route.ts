@@ -11,8 +11,7 @@ import type { NextRequest } from 'next/server';
  */
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json();
-        const { accessToken, refreshToken } = body;
+        await request.json(); // optional: use accessToken/refreshToken to revoke on backend
 
         // TODO: Call backend to revoke all tokens for user
         // For now, just clear cookies
@@ -24,8 +23,7 @@ export async function POST(request: NextRequest) {
         response.cookies.delete('refresh-token');
 
         return response;
-    } catch (error) {
-        console.error('Logout all error:', error);
+    } catch {
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }

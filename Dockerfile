@@ -17,7 +17,7 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json* ./
-COPY .npmrc ./
+COPY .npmrc* ./
 RUN if [ -f package-lock.json ]; then npm ci --legacy-peer-deps; else npm install --legacy-peer-deps; fi
 
 # Stage 2: builder - copy source, set NEXT_PUBLIC_*, run next build (produces .next/standalone)
@@ -28,19 +28,36 @@ COPY . .
 
 # Optional build-time args for NEXT_PUBLIC_* (client bundle). Set via docker build --build-arg or compose build.args.
 # These are baked into the client bundle at build time and cannot be changed at runtime.
+# 
+# Required for production:
 ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_GRAPHQL_ENDPOINT
-ARG NEXT_PUBLIC_WS_ENDPOINT
 ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_PULSE_CORE_URL
+#
+# Optional (auto-derived if not set):
+ARG NEXT_PUBLIC_API_GATEWAY_URL
+ARG NEXT_PUBLIC_GRAPHQL_ENDPOINT
+ARG NEXT_PUBLIC_GRAPHQL_AUTH_ENDPOINT
+ARG NEXT_PUBLIC_WS_URL
+ARG NEXT_PUBLIC_WS_AUTH_URL
+ARG NEXT_PUBLIC_WS_NOTIFICATIONS_URL
+ARG NEXT_PUBLIC_CSP_IMG_ORIGINS
+#
 # Required at build time to avoid "Failed to find Server Action 'x'" in production (Next.js Server Action IDs).
 # Generate once: openssl rand -base64 32. Same value must be set at runtime in ECS task definition.
 ARG NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
 
 # Set build-time environment variables (these are baked into the bundle)
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
-ENV NEXT_PUBLIC_GRAPHQL_ENDPOINT=${NEXT_PUBLIC_GRAPHQL_ENDPOINT:-http://localhost:8000/graphql/sales-reports}
-ENV NEXT_PUBLIC_WS_ENDPOINT=${NEXT_PUBLIC_WS_ENDPOINT:-ws://localhost:8000/graphql}
+ENV NEXT_PUBLIC_API_GATEWAY_URL=${NEXT_PUBLIC_API_GATEWAY_URL:-}
+ENV NEXT_PUBLIC_GRAPHQL_ENDPOINT=${NEXT_PUBLIC_GRAPHQL_ENDPOINT:-/graphql/sales-reports}
+ENV NEXT_PUBLIC_GRAPHQL_AUTH_ENDPOINT=${NEXT_PUBLIC_GRAPHQL_AUTH_ENDPOINT:-/graphql/auth}
+ENV NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-}
+ENV NEXT_PUBLIC_WS_AUTH_URL=${NEXT_PUBLIC_WS_AUTH_URL:-}
+ENV NEXT_PUBLIC_WS_NOTIFICATIONS_URL=${NEXT_PUBLIC_WS_NOTIFICATIONS_URL:-}
 ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3004}
+ENV NEXT_PUBLIC_PULSE_CORE_URL=${NEXT_PUBLIC_PULSE_CORE_URL:-}
+ENV NEXT_PUBLIC_CSP_IMG_ORIGINS=${NEXT_PUBLIC_CSP_IMG_ORIGINS:-}
 ENV NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:-}
 
 # Use simplified config for Docker builds

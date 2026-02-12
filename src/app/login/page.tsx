@@ -45,7 +45,7 @@ export default function LoginPage() {
         try {
             if (rememberMe) localStorage.setItem('sales-reports-remember-me', 'true');
             else localStorage.removeItem('sales-reports-remember-me');
-        } catch (_) {}
+        } catch { }
     }, [rememberMe]);
 
     const toggleVisibility = () => setIsVisible(!isVisible);
@@ -116,8 +116,8 @@ export default function LoginPage() {
                         }),
                     });
                 }
-            } catch (cookieError) {
-                console.warn('Failed to set cookies, continuing with localStorage:', cookieError);
+            } catch {
+                // Continue with localStorage if cookie set fails
             }
 
             toast.success('Login successful!', {
@@ -127,16 +127,16 @@ export default function LoginPage() {
             // Redirect to dashboard or requested page
             const redirect = searchParams.get('redirect') || '/dashboard';
             router.push(redirect);
-        } catch (err: any) {
+        } catch (err: unknown) {
             // Parse GraphQL errors
             let errorMessage = 'Login failed. Please check your credentials.';
-
-            if (err?.graphQLErrors && err.graphQLErrors.length > 0) {
-                errorMessage = err.graphQLErrors[0].message;
-            } else if (err?.networkError) {
+            const e = err as { graphQLErrors?: Array<{ message?: string }>; networkError?: unknown; message?: string };
+            if (e?.graphQLErrors && e.graphQLErrors.length > 0) {
+                errorMessage = e.graphQLErrors[0].message ?? errorMessage;
+            } else if (e?.networkError) {
                 errorMessage = 'Network error. Please check your connection and try again.';
-            } else if (err?.message) {
-                errorMessage = err.message;
+            } else if (e?.message) {
+                errorMessage = e.message;
             }
 
             // Check if error is field-specific

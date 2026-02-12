@@ -38,10 +38,8 @@ const setCookie = (name: string, value: string, maxAge: number) => {
     document.cookie = `${name}=${value}; path=/; max-age=${maxAge}; SameSite=Lax${isProduction ? '; Secure' : ''}`;
 };
 
-const deleteCookie = (name: string) => {
-    if (typeof document === 'undefined') return;
-    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
-};
+// deleteCookie reserved for future use (e.g. logout clear specific cookie)
+// const deleteCookie = (name: string) => { ... };
 
 export const setTokens = (tokenData: TokenData): void => {
     const storage = getAuthStorage();
@@ -184,7 +182,6 @@ export const refreshAccessToken = async (): Promise<string | null> => {
         const result = await response.json();
 
         if (result.errors || !result.data?.refreshToken) {
-            console.error('Refresh failed:', result.errors);
             clearTokens();
             return null;
         }
@@ -223,8 +220,7 @@ export const refreshAccessToken = async (): Promise<string | null> => {
         }
 
         return accessToken;
-    } catch (error) {
-        console.error('Token refresh execution failed:', error);
+    } catch {
         clearTokens();
         return null;
     }

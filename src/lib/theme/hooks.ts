@@ -58,8 +58,8 @@ export function useThemeSync(userId?: string) {
                 );
 
                 setLastSynced(Date.now());
-            } catch (error) {
-                console.error('Failed to sync theme preference:', error);
+            } catch {
+                // Sync theme preference failed
             } finally {
                 setSyncing(false);
             }
@@ -96,8 +96,8 @@ export function useLoadUserTheme(userId?: string) {
                     const preference: ThemePreference = JSON.parse(stored);
                     setTheme(preference.mode);
                 }
-            } catch (error) {
-                console.error('Failed to load theme preference:', error);
+            } catch {
+                // Load theme preference failed
             } finally {
                 setLoading(false);
             }

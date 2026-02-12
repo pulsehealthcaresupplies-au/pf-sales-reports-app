@@ -2,7 +2,8 @@ import nextConfig from 'eslint-config-next';
 import tseslint from 'typescript-eslint';
 
 /** @type {import('eslint').Linter.Config[]} */
-export default [
+const config = [
+  { ignores: ['src/lib/graphql/generated/**', 'check-apollo.js', 'fix-generated.js', 'patch-hooks.js'] },
   ...nextConfig,
   {
     files: ['**/*.{js,jsx,mjs,ts,tsx,mts,cts}'],
@@ -16,3 +17,5 @@ export default [
     },
   },
 ];
+
+export default config;

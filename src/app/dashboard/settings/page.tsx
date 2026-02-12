@@ -61,7 +61,7 @@ export default function SettingsPage() {
       newPassword: commonRules.password,
       passwordConfirm: {
         required: true,
-        custom: (value: string) => {
+        custom: () => {
           // We'll validate this in useEffect to avoid circular reference
           return null;
         },
@@ -102,7 +102,7 @@ export default function SettingsPage() {
         passwordForm.setError('passwordConfirm', null);
       }
     }
-  }, [passwordForm.values.newPassword, passwordForm.values.passwordConfirm]);
+  }, [passwordForm.values.newPassword, passwordForm.values.passwordConfirm, passwordForm]);
 
   return (
     <div className="container mx-auto p-6 max-w-2xl space-y-6">

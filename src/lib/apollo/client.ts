@@ -1,8 +1,9 @@
 'use client';
 
-import { ApolloClient, InMemoryCache, createHttpLink, from, Observable, ApolloLink, split } from '@apollo/client';
+/* eslint-disable no-console -- Apollo/WebSocket debug logging */
+import { ApolloClient, InMemoryCache, createHttpLink, from, Observable, ApolloLink, split, CombinedGraphQLErrors, ServerError } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { onError } from '@apollo/client/link/error';
+import { ErrorLink } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
@@ -16,19 +17,37 @@ import {
   clearTokens
 } from '../auth/token-manager';
 
+// Types for logger
+type LogMessage = string | Error | unknown;
+type LogMeta = Record<string, unknown> | undefined;
+
 // Simple logger replacement
 const logger = {
-  error: (msg: any, meta?: any) => console.error(msg, meta),
-  warn: (msg: any, meta?: any) => console.warn(msg, meta),
-  info: (msg: any, meta?: any) => console.info(msg, meta),
+  error: (msg: LogMessage, meta?: LogMeta) => console.error(msg, meta),
+  warn: (msg: LogMessage, meta?: LogMeta) => console.warn(msg, meta),
+  info: (msg: LogMessage, meta?: LogMeta) => console.info(msg, meta),
 };
+
+// Types for GraphQL errors
+interface GraphQLError {
+  message: string;
+  extensions?: {
+    code?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface GraphQLErrorResponse {
+  graphQLErrors?: readonly GraphQLError[];
+}
 
 // Simple error handler replacement
 const errorHandler = {
-  handleGraphQLError: ({ graphQLErrors }: any) => {
-    graphQLErrors.forEach((err: any) => console.error('[GraphQL error]:', err));
+  handleGraphQLError: ({ graphQLErrors }: GraphQLErrorResponse) => {
+    graphQLErrors?.forEach((err: GraphQLError) => console.error('[GraphQL error]:', err));
   },
-  handleNetworkError: (error: any) => {
+  handleNetworkError: (error: Error | unknown) => {
     console.error('[Network error]:', error);
   },
 };
@@ -77,18 +96,24 @@ const authLink = setContext(async (_, { headers, skipAuth }) => {
 });
 
 // Error Link with Refresh Logic
-const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: any) => {
-  if (graphQLErrors) {
-    for (const err of graphQLErrors) {
-      const errorCode = err.extensions?.code;
-      const errorMessage = err.message || '';
+// Apollo Client 4.x uses ErrorLink with unified error property
+const errorLink = new ErrorLink(({ error, operation, forward }) => {
+  if (!error || !operation || !forward) {
+    return undefined;
+  }
+
+  // Check if it's a GraphQL error
+  if (CombinedGraphQLErrors.is(error)) {
+    for (const graphQLError of error.errors) {
+      const errorCode = graphQLError.extensions?.code;
+      const errorMessage = graphQLError.message || '';
 
       // Check for authentication errors
       if (errorCode === 'UNAUTHENTICATED' || errorCode === 'FORBIDDEN' || errorMessage.toLowerCase().includes('unauthenticated')) {
         console.log('🔄 Token expired, attempting refresh...');
 
         // Create an observable to handle the async refresh and retry
-        return new Observable((observer) => {
+        return new Observable<ApolloLink.Result>((observer) => {
           refreshAccessToken()
             .then((newToken) => {
               if (newToken) {
@@ -101,22 +126,14 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
                   },
                 });
 
-                // Retry the operation
-                const subscriber = {
-                  next: observer.next.bind(observer),
-                  error: observer.error.bind(observer),
-                  complete: observer.complete.bind(observer),
-                };
-
-                forward(operation).subscribe(subscriber);
+                forward(operation).subscribe(observer);
               } else {
                 console.log('❌ Refresh failed (no token), logging out...');
                 clearTokens();
                 if (typeof window !== 'undefined') {
                   window.location.href = ROUTES.AUTH.LOGIN;
                 }
-                // Pass the original error
-                observer.error(err);
+                observer.error(graphQLError);
               }
             })
             .catch((e) => {
@@ -131,20 +148,27 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
       }
 
       logger.error('GraphQL error', {
-        message: err.message,
-        locations: err.locations,
-        path: err.path,
+        message: graphQLError.message,
+        locations: graphQLError.locations,
+        path: graphQLError.path,
         operation: operation.operationName,
       });
-      errorHandler.handleGraphQLError({ graphQLErrors: [graphQLErrors] });
+      // Convert GraphQLFormattedError to our GraphQLError interface format
+      const formattedError: GraphQLError = {
+        message: graphQLError.message,
+        extensions: (graphQLError.extensions as { code?: string; [key: string]: unknown }) || {},
+      };
+      errorHandler.handleGraphQLError({ graphQLErrors: [formattedError] });
     }
-  }
-
-  if (networkError) {
-    const statusCode = (networkError as any).statusCode;
+    // After processing all GraphQL errors, return undefined
+    return undefined;
+  } else {
+    // Network error (not a GraphQL error)
+    const statusCode = ServerError.is(error) ? error.statusCode : (error as Error & { statusCode?: number }).statusCode;
+    
     if (statusCode === 401) {
       console.log('🔄 Network 401, attempting token refresh...');
-      return new Observable((observer) => {
+      return new Observable<ApolloLink.Result>((observer) => {
         refreshAccessToken()
           .then((newToken) => {
             if (newToken) {
@@ -152,17 +176,13 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
               operation.setContext({
                 headers: { ...oldHeaders, authorization: `Bearer ${newToken}` },
               });
-              forward(operation).subscribe({
-                next: observer.next.bind(observer),
-                error: observer.error.bind(observer),
-                complete: observer.complete.bind(observer),
-              });
+              forward(operation).subscribe(observer);
             } else {
               clearTokens();
               if (typeof window !== 'undefined' && window.location.pathname !== ROUTES.AUTH.LOGIN) {
                 window.location.href = ROUTES.AUTH.LOGIN;
               }
-              observer.error(networkError);
+              observer.error(error);
             }
           })
           .catch((e) => {
@@ -177,13 +197,13 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
     }
 
     logger.error('Network error', {
-      error: networkError.message,
+      error: error.message,
       operation: operation.operationName,
     });
-    errorHandler.handleNetworkError(networkError);
+    errorHandler.handleNetworkError(error);
   }
-
-  return forward(operation);
+  
+  return undefined;
 });
 
 // Retry Link
@@ -195,10 +215,14 @@ const retryLink = new RetryLink({
   },
   attempts: {
     max: 3,
-    retryIf: (error, _operation) => {
+    retryIf: (error) => {
       // Don't retry if it's a 4xx error (except 429 maybe, but simplifying)
       // Retry on 5xx or network errors
-      return !!error && ((error && (error as any).statusCode >= 500) || (error && !(error as any).statusCode));
+      interface ErrorWithStatusCode {
+        statusCode?: number;
+      }
+      const err = error as ErrorWithStatusCode | null;
+      return !!err && ((err.statusCode !== undefined && err.statusCode >= 500) || err.statusCode === undefined);
     },
   },
 });

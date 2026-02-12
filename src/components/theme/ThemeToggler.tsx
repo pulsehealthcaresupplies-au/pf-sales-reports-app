@@ -10,7 +10,7 @@ import {
 import { useTheme } from '@/lib/theme';
 import { ThemeMode } from '@/lib/theme/types';
 import { Monitor, Moon, Sun } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 /**
  * ThemeToggler Component

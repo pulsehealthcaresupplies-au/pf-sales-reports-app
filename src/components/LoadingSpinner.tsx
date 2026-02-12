@@ -5,6 +5,8 @@
 
 'use client';
 
+import Image from 'next/image';
+
 export interface LoaderProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
@@ -32,11 +34,12 @@ export function PulseHealthLoader({
 
   const content = (
     <div className={cn('flex flex-col items-center justify-center gap-5', className)}>
-      <img
+      <Image
         src={LOGO_SRC}
         alt="Pulse Health"
+        width={logoWidth}
+        height={Math.round(logoWidth * 0.5)}
         className="object-contain flex-shrink-0"
-        style={{ width: logoWidth, height: 'auto' }}
       />
       <div
         className="relative overflow-hidden rounded-full bg-muted"

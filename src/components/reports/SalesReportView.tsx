@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { GET_SALES_REPORTS_SALES_REPORT } from '@/graphql/operations/sales-reports-prefixed';
-import { Card, CardBody, CardHeader, Button, Input, Select, SelectItem, Spinner } from '@heroui/react';
-import { Download, FileText, FileSpreadsheet, Filter, RefreshCw, Smartphone, Tablet, Monitor } from 'lucide-react';
+import { Card, CardBody, CardHeader, Button, Input, Select, SelectItem } from '@heroui/react';
+import { FileText, FileSpreadsheet } from 'lucide-react';
 import * as Types from '@/lib/graphql/generated/types';
 import { format } from 'date-fns';
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
@@ -14,10 +14,11 @@ import { useRequestState } from '@/lib/hooks/useRequestState';
 import { RequestStateWrapper } from '@/components/ui/RequestStateWrapper';
 
 interface SalesReportViewProps {
-  initialData?: any; // Replace with proper type if available from page
+  initialData?: unknown;
 }
 
-export function SalesReportView({ initialData }: SalesReportViewProps) {
+export function SalesReportView(props: SalesReportViewProps) {
+  void props.initialData; // reserved for future SSR/preload
   const [startDate, setStartDate] = useState(format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [groupBy, setGroupBy] = useState('day');
@@ -34,7 +35,7 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
   });
 
   // Use request state hook
-  const requestState = useRequestState<any>({ data, loading, error, refetch });
+  const requestState = useRequestState<{ salesReportsSalesReport?: Types.SalesReport }>({ data, loading, error, refetch });
 
   const handleExportCSV = () => {
     const report = requestState.data?.salesReportsSalesReport;
@@ -122,15 +123,16 @@ export function SalesReportView({ initialData }: SalesReportViewProps) {
                 setWarehouseId(k && k !== 'all' ? k : undefined);
               }}
               description="All warehouses by default"
+              items={[
+                { warehouseId: 'all', warehouseName: 'All Warehouses' },
+                ...(report?.revenueByWarehouse || []),
+              ]}
             >
-              <SelectItem key="all" textValue="All Warehouses">
-                All Warehouses
-              </SelectItem>
-              {(report?.revenueByWarehouse || []).map((w: { warehouseId: string; warehouseName: string }) => (
+              {(w: { warehouseId: string; warehouseName: string }) => (
                 <SelectItem key={w.warehouseId} textValue={w.warehouseName}>
                   {w.warehouseName}
                 </SelectItem>
-              ))}
+              )}
             </Select>
             <Select
               label="Group By"

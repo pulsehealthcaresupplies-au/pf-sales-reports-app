@@ -17,8 +17,7 @@ export function getAccessToken(): string | null {
   try {
     const token = getAccessTokenFromTokenManager();
     return token?.trim() || null;
-  } catch (error) {
-    console.error('Error getting access token:', error);
+  } catch {
     return null;
   }
 }
@@ -88,7 +87,7 @@ export function clearAuthTokens(): void {
   if (typeof window === 'undefined') return;
   try {
     clearAllAuthData();
-  } catch (error) {
-    console.error('Error clearing auth tokens:', error);
+  } catch {
+    // Clear failed
   }
 }

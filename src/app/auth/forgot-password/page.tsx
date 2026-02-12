@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Input, Button, Card, CardBody, CardHeader } from '@heroui/react';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useForm } from '@/lib/form-hooks';
 import { commonRules } from '@/lib/form-validation';
 import { ThemeToggler } from '@/components/theme/ThemeToggler';
@@ -25,11 +25,11 @@ export default function ForgotPasswordPage() {
     fieldTypes: {
       email: 'string',
     },
-    onSubmit: async (values) => {
+    onSubmit: async () => {
       // TODO: Implement forgotPassword API call
       // For now, simulate success
       await new Promise(resolve => setTimeout(resolve, 1000));
-      // const result = await forgotPassword(values.email);
+      // const result = await forgotPassword(_values.email);
       // if (!result.success) {
       //   throw new Error(result.message || 'Failed to send reset email');
       // }
@@ -86,11 +86,11 @@ export default function ForgotPasswordPage() {
       confirmPassword: 'password',
       otp: 'string',
     },
-    onSubmit: async (values) => {
+    onSubmit: async () => {
       // TODO: Implement resetPassword API call
       // For now, simulate success
       await new Promise(resolve => setTimeout(resolve, 1000));
-      // const result = await resetPassword(values.otp, values.newPassword);
+      // const result = await resetPassword(_values.otp, _values.newPassword);
       // if (!result.success) {
       //   throw new Error(result.message || 'Failed to reset password');
       // }
@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
     if (step === 'reset' && otpForm.values.otp) {
       resetForm.setValue('otp', otpForm.values.otp);
     }
-  }, [step, otpForm.values.otp]);
+  }, [step, otpForm.values.otp, resetForm]);
 
   // Re-validate confirmPassword when newPassword changes
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function ForgotPasswordPage() {
         resetForm.setError('confirmPassword', null);
       }
     }
-  }, [resetForm.values.newPassword, resetForm.values.confirmPassword, resetForm.touched.confirmPassword]);
+  }, [resetForm.values.newPassword, resetForm.values.confirmPassword, resetForm.touched.confirmPassword, resetForm]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4 relative">

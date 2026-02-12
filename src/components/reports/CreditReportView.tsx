@@ -15,8 +15,8 @@ import { toast } from 'sonner';
 
 export function CreditReportView() {
   const [creditType, setCreditType] = useState<string | undefined>(undefined);
-  const [includeOverdue, setIncludeOverdue] = useState(true);
-  const [includeDueSoon, setIncludeDueSoon] = useState(true);
+  const [includeOverdue] = useState(true);
+  const [includeDueSoon] = useState(true);
 
   // Define provisional types until codegen is run
   interface CreditReportData {

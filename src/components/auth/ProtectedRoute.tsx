@@ -23,7 +23,7 @@ interface ProtectedRouteProps {
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
     const router = useRouter();
-    const { user, isAuthenticated, loading: authLoading, getValidToken, logout } = useAuth();
+    const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
     // Initialize state to avoid redundant verifying if already authenticated
     const [isVerifying, setIsVerifying] = useState(!isAuthenticated);
     const [authVerified, setAuthVerified] = useState(isAuthenticated);
@@ -62,8 +62,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
                 // Auth verified
                 setAuthVerified(true);
-            } catch (error) {
-                console.error('Auth verification error:', error);
+            } catch {
                 await logout();
                 router.replace(ROUTES.AUTH.LOGIN);
             } finally {

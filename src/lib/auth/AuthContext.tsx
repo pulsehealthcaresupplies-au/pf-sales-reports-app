@@ -3,14 +3,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@apollo/client/react';
-import { LOGIN_MUTATION, REFRESH_TOKEN_MUTATION, LOGOUT_MUTATION } from '@/lib/graphql/operations/mutations/auth-mutations';
+import { LOGIN_MUTATION, REFRESH_TOKEN_MUTATION } from '@/lib/graphql/operations/mutations/auth-mutations';
 import { getGraphQLEndpointPath } from '@/config/endpoints';
 import {
     setTokens,
     clearTokens,
     setHashPhrase,
     refreshAccessToken as managerRefresh,
-    getAccessToken,
     getAuthStorage,
     isTokenExpired
 } from './token-manager';
@@ -108,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // We should update local state if manager returned new token
                 if (newToken) return newToken;
                 return null;
-            } catch (error) {
+            } catch {
                 return null;
             }
         }
@@ -170,7 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const { data } = await refreshMutation({
                 variables: { refreshToken: authState.refreshToken },
                 context: { skipAuth: true, endpoint: getGraphQLEndpointPath('sales-reports') },
-            }) as any;
+            }) as { data?: { refreshToken?: { accessToken: string; refreshToken?: string | null; expiresAt?: number | string | null; hashPhrase?: string | null; user?: User | null } } };
 
             if (data?.refreshToken) {
                 const { accessToken, refreshToken, expiresAt, hashPhrase, user } = data.refreshToken;
@@ -190,9 +189,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
 
             throw new Error('Token refresh failed');
-        } catch (error) {
-            console.error('Token refresh failed:', error);
-            setAuthState((prev) => ({ ...prev, isRefreshing: false }));
+            } catch (err) {
+                setAuthState((prev) => ({ ...prev, isRefreshing: false }));
             // Logout on hard fail - clear state directly to avoid circular dependency
             setAuthState({
                 accessToken: null,
@@ -204,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
             clearTokens();
             router.push(ROUTES.AUTH.LOGIN);
-            throw error;
+            throw err;
         }
     }, [authState.refreshToken, authState.user, refreshMutation, processAuthResponse, router]);
 
@@ -252,8 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         clearAuthState();
                     }
                 }
-            } catch (error) {
-                console.error('Failed to load auth state:', error);
+            } catch {
                 clearAuthState();
             } finally {
                 setIsInitialized(true);
@@ -278,7 +275,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         app: 'SALES_REPORTS',
                     },
                     context: { endpoint: getGraphQLEndpointPath('sales-reports') },
-                }) as any;
+                }) as { data?: { login?: { accessToken: string; refreshToken?: string | null; expiresAt?: number; expiresIn?: number; user?: User | null; hashPhrase?: string | null } } };
 
                 if (data?.login) {
                     const { accessToken, refreshToken, expiresAt: expiresAtRaw, expiresIn, user, hashPhrase } = data.login;
@@ -301,17 +298,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000);
                     }
 
-                    await processAuthResponse(accessToken, refreshToken, user, expiresAt, hashPhrase ?? undefined);
+                    await processAuthResponse(
+                        accessToken,
+                        refreshToken ?? null,
+                        user ?? null,
+                        expiresAt,
+                        hashPhrase ?? undefined
+                    );
 
-                    console.log('✅ Login successful! Cookie set. isAuthenticated:', true);
                 }
-            } catch (error: any) {
-                console.error('Login failed:', error);
+            } catch (error: unknown) {
                 const { getApiErrorMessage } = await import('@/lib/utils/apiErrorDisplay');
                 const errorMessage = getApiErrorMessage(error);
                 const loginError = new Error(errorMessage);
-                (loginError as any).graphQLErrors = error?.graphQLErrors;
-                (loginError as any).networkError = error?.networkError;
+                const e = error as { graphQLErrors?: unknown[]; networkError?: unknown };
+                (loginError as Error & { graphQLErrors?: unknown[]; networkError?: unknown }).graphQLErrors = e?.graphQLErrors;
+                (loginError as Error & { graphQLErrors?: unknown[]; networkError?: unknown }).networkError = e?.networkError;
                 throw loginError;
             }
         },
@@ -331,11 +333,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         refreshToken: authState.refreshToken
                     })
                 });
-            } catch (error) {
-                console.warn('Backend logout failed, clearing client state anyway:', error);
+            } catch {
+                // Backend logout failed; clearing client state anyway
             }
-        } catch (error) {
-            console.error('Logout error:', error);
+        } catch {
+            // Logout error; clearing client state in finally
         } finally {
             // Always clear client state regardless of backend response
             setAuthState({
@@ -381,9 +383,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Clear current session
             await logout();
-        } catch (error) {
-            console.error('Logout all devices error:', error);
-            throw error;
+        } catch (err) {
+            throw err;
         }
     }, [authState.accessToken, authState.refreshToken, logout]);
 
@@ -402,12 +403,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (timeUntilRefresh <= 0) {
             const timeRemaining = expiresAt - now;
             if (timeRemaining > 0 && !authState.isRefreshing) {
-                refreshAccessToken().catch(e => console.warn("Background auto-refresh failed", e));
+                refreshAccessToken().catch(() => {});
             }
         } else {
             timer = setTimeout(() => {
                 if (!authState.isRefreshing) {
-                    refreshAccessToken().catch(e => console.warn("Background auto-refresh failed", e));
+                    refreshAccessToken().catch(() => {});
                 }
             }, timeUntilRefresh);
         }

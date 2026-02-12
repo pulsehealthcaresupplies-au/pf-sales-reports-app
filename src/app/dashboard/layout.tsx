@@ -31,8 +31,8 @@ export default function DashboardLayout({
         try {
             await logout();
             router.push(ROUTES.AUTH.LOGIN);
-        } catch (error) {
-            console.error('Logout error:', error);
+        } catch {
+            // Logout error handled by AuthContext
         }
     };
 

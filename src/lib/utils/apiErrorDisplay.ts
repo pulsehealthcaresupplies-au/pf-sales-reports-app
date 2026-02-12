@@ -17,11 +17,7 @@ export type ApiErrorDisplay = {
   status?: number;
 };
 
-/**
- * Get display message and field errors from an Apollo/GraphQL error.
- * Handles both mutation/query errors (graphQLErrors) and network errors.
- */
-export function getApiErrorDisplay(error: {
+export type ApiErrorInput = {
   message?: string;
   graphQLErrors?: Array<{
     message?: string;
@@ -33,13 +29,21 @@ export function getApiErrorDisplay(error: {
     };
   }>;
   networkError?: { message?: string };
-}): ApiErrorDisplay {
+};
+
+/**
+ * Get display message and field errors from an Apollo/GraphQL error.
+ * Handles both mutation/query errors (graphQLErrors) and network errors.
+ * Accepts unknown so it can be used in catch blocks.
+ */
+export function getApiErrorDisplay(error: unknown): ApiErrorDisplay {
+  const e: ApiErrorInput = error && typeof error === "object" ? (error as ApiErrorInput) : {};
   const fieldErrors: ApiErrorDetails = {};
-  let message = error.message ?? "An error occurred.";
+  let message = e.message ?? "An error occurred.";
   let code: string | undefined;
   let status: number | undefined;
 
-  const gqlErrors = error.graphQLErrors;
+  const gqlErrors = e.graphQLErrors;
   if (gqlErrors?.length) {
     const first = gqlErrors[0];
     message = first.message ?? message;
@@ -51,8 +55,8 @@ export function getApiErrorDisplay(error: {
     if (ext?.status != null) status = Number(ext.status);
   }
 
-  if (error.networkError?.message && !gqlErrors?.length) {
-    message = error.networkError.message;
+  if (e.networkError?.message && !gqlErrors?.length) {
+    message = e.networkError.message;
   }
 
   return { message, fieldErrors, code, status };
@@ -60,8 +64,9 @@ export function getApiErrorDisplay(error: {
 
 /**
  * Get a single message string for toast/alert (prefers __all__[0] when present).
+ * Accepts unknown so it can be used in catch blocks.
  */
-export function getApiErrorMessage(error: Parameters<typeof getApiErrorDisplay>[0]): string {
+export function getApiErrorMessage(error: unknown): string {
   const { message, fieldErrors } = getApiErrorDisplay(error);
   const all = fieldErrors["__all__"];
   if (all?.length) {

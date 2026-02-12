@@ -12,9 +12,9 @@ import type { ApolloQueryResult } from '@apollo/client';
 import type { RequestState, RequestStateHook } from '@/lib/graphql/operations/types/response-types';
 
 type ApolloError = Error & {
-    graphQLErrors?: any[];
+    graphQLErrors?: unknown[];
     networkError?: Error | null;
-    extraInfo?: any;
+    extraInfo?: unknown;
 };
 
 interface UseRequestStateOptions<T> {
@@ -25,13 +25,13 @@ interface UseRequestStateOptions<T> {
 }
 
 // Type guard to check if result is a Next.js App Router Result type
-function isNextJsResult<T>(result: any): result is { data?: T; dataState?: string; loading?: boolean; error?: any; refetch?: () => Promise<any> } {
-    return result && typeof result === 'object' && 'dataState' in result;
+function isNextJsResult<T>(result: unknown): result is { data?: T; dataState?: string; loading?: boolean; error?: unknown; refetch?: () => Promise<unknown> } {
+    return !!result && typeof result === 'object' && 'dataState' in result;
 }
 
 // Type guard to check if result is a standard Apollo Client query result
-function isStandardApolloResult<T>(result: any): result is { data?: T | null; loading: boolean; error?: ApolloError | null; refetch?: () => Promise<ApolloQueryResult<T>> } {
-    return result && typeof result === 'object' && 'loading' in result && typeof result.loading === 'boolean';
+function isStandardApolloResult<T>(result: unknown): result is { data?: T | null; loading: boolean; error?: ApolloError | null; refetch?: () => Promise<ApolloQueryResult<T>> } {
+    return !!result && typeof result === 'object' && 'loading' in result && typeof (result as { loading: unknown }).loading === 'boolean';
 }
 
 /**
@@ -39,7 +39,7 @@ function isStandardApolloResult<T>(result: any): result is { data?: T | null; lo
  * Supports both standard Apollo Client query results and Next.js App Router Result types
  */
 export function useRequestState<T>(
-    queryResult: any,
+    queryResult: unknown,
     options: UseRequestStateOptions<T> = {}
 ): RequestStateHook<T> {
     const { onSuccess, onError, autoRefetch = false, refetchInterval } = options;
@@ -67,12 +67,13 @@ export function useRequestState<T>(
             // Standard Apollo Client query result
             return queryResult;
         } else {
-            // Fallback: try to extract common properties
+            // Fallback: try to extract common properties (queryResult is unknown)
+            const q = queryResult as { data?: T | null; loading?: boolean; error?: unknown; refetch?: () => Promise<ApolloQueryResult<T>> } | null | undefined;
             return {
-                data: queryResult?.data ?? null,
-                loading: queryResult?.loading ?? false,
-                error: queryResult?.error ? (queryResult.error instanceof Error ? queryResult.error : new Error(String(queryResult.error))) : null,
-                refetch: queryResult?.refetch,
+                data: q?.data ?? null,
+                loading: q?.loading ?? false,
+                error: q?.error ? (q.error instanceof Error ? q.error : new Error(String(q.error))) : null,
+                refetch: q?.refetch,
             };
         }
     })();
@@ -92,11 +93,12 @@ export function useRequestState<T>(
                 setError(err);
                 onError?.(err);
             });
-        } else if (normalizedResult.data) {
+        } else if (normalizedResult.data != null) {
+            const data = normalizedResult.data;
             queueMicrotask(() => {
                 setState('success');
                 setError(null);
-                onSuccess?.(normalizedResult.data);
+                onSuccess?.(data);
             });
         } else {
             queueMicrotask(() => {
@@ -106,7 +108,10 @@ export function useRequestState<T>(
     }, [normalizedResult.loading, normalizedResult.error, normalizedResult.data, onSuccess, onError]);
 
     const refetchFnRef = useRef(normalizedResult.refetch);
-    refetchFnRef.current = normalizedResult.refetch;
+    // Update ref in effect to avoid accessing ref.current during render
+    useEffect(() => {
+        refetchFnRef.current = normalizedResult.refetch;
+    }, [normalizedResult.refetch]);
 
     // Auto-refetch functionality
     useEffect(() => {
@@ -143,8 +148,11 @@ export function useRequestState<T>(
 
 /**
  * Hook for mutation state management
+ * @typeParam TData - mutation result data type
+ * @typeParam _TVariables - mutation variables type (reserved for API)
  */
-export function useMutationState<TData, TVariables = Record<string, any>>(
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- type param for API
+export function useMutationState<TData, _TVariables = Record<string, unknown>>(
     mutationResult: {
         data?: TData | null;
         loading: boolean;
