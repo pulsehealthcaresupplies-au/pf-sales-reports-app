@@ -128,15 +128,20 @@ export default function LoginPage() {
             const redirect = searchParams.get('redirect') || '/dashboard';
             router.push(redirect);
         } catch (err: unknown) {
-            // Parse GraphQL errors
+            // Extract error message - AuthContext throws proper Error with message
             let errorMessage = 'Login failed. Please check your credentials.';
-            const e = err as { graphQLErrors?: Array<{ message?: string }>; networkError?: unknown; message?: string };
-            if (e?.graphQLErrors && e.graphQLErrors.length > 0) {
-                errorMessage = e.graphQLErrors[0].message ?? errorMessage;
-            } else if (e?.networkError) {
-                errorMessage = 'Network error. Please check your connection and try again.';
-            } else if (e?.message) {
-                errorMessage = e.message;
+            
+            if (err instanceof Error) {
+                errorMessage = err.message;
+            } else if (typeof err === 'object' && err !== null) {
+                const e = err as { message?: string; graphQLErrors?: Array<{ message?: string }>; networkError?: { message?: string } };
+                if (e.message) {
+                    errorMessage = e.message;
+                } else if (e.graphQLErrors && e.graphQLErrors.length > 0) {
+                    errorMessage = e.graphQLErrors[0].message ?? errorMessage;
+                } else if (e.networkError?.message) {
+                    errorMessage = 'Network error. Please check your connection and try again.';
+                }
             }
 
             // Check if error is field-specific

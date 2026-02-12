@@ -328,6 +328,9 @@ export function getApolloClient(): ApolloClient {
         query: {
           errorPolicy: 'all',
         },
+        mutate: {
+          errorPolicy: 'all', // Ensure mutations also return errors in result.error
+        },
       },
     });
   }

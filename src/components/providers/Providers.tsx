@@ -3,10 +3,13 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { ApolloProvider } from '@apollo/client/react';
 import { getApolloClient } from '@/lib/apollo/client';
-import { AuthProvider } from '@/lib/auth/AuthContext';
+import { AuthProvider, useAuth } from '@/lib/auth/AuthContext';
 import { ThemeProvider } from '@/lib/theme/ThemeProvider';
 import { Toaster } from 'sonner';
 import { BackendHealthGate } from '@/components/BackendHealthGate';
+import { InactivityProvider } from '@/components/providers/InactivityProvider';
+import { useInactivityTimeoutConfig } from '@/hooks/useInactivityTimeoutConfig';
+import { ROUTES } from '@/config/routes';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -24,6 +27,26 @@ interface ProvidersProps {
  * 
  * SECURITY: Providers are ordered to ensure proper authentication flow
  */
+function InactivityWrapper({ children }: { children: ReactNode }) {
+  const { refreshAccessToken } = useAuth();
+  const inactivityTimeout = useInactivityTimeoutConfig();
+  
+  return (
+    <InactivityProvider
+      appName="SALES_REPORTS"
+      tokenKey="sales_reports_access_token"
+      refreshTokenKey="sales_reports_refresh_token"
+      loginRoute={ROUTES.AUTH.LOGIN}
+      inactivityPeriod={inactivityTimeout}
+      onRefreshToken={async () => {
+        await refreshAccessToken();
+      }}
+    >
+      {children}
+    </InactivityProvider>
+  );
+}
+
 export function Providers({ children, apiBaseUrl = '' }: ProvidersProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -44,8 +67,10 @@ export function Providers({ children, apiBaseUrl = '' }: ProvidersProps) {
       <ThemeProvider>
         <ApolloProvider client={getApolloClient()}>
           <AuthProvider>
-            {children}
-            <Toaster position="top-right" richColors />
+            <InactivityWrapper>
+              {children}
+              <Toaster position="top-right" richColors />
+            </InactivityWrapper>
           </AuthProvider>
         </ApolloProvider>
       </ThemeProvider>

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@apollo/client/react';
-import { LOGIN_MUTATION, REFRESH_TOKEN_MUTATION } from '@/lib/graphql/operations/mutations/auth-mutations';
+import { LOGIN_MUTATION, REFRESH_TOKEN_MUTATION, LOGOUT_MUTATION } from '@/lib/graphql/operations/mutations/auth-mutations';
 import { getGraphQLEndpointPath } from '@/config/endpoints';
 import {
     setTokens,
@@ -16,6 +16,7 @@ import {
 import { setTokenGetter } from '@/lib/apollo/client';
 import { ROUTES, getLoginUrl } from '@/config/routes';
 import { getAuthKeys } from './auth-keys';
+import { toast } from 'sonner';
 
 // Temporary types - will be replaced with generated types after codegen
 interface User {
@@ -59,8 +60,15 @@ const ALLOWED_ROLES = [
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
-    const [loginMutation] = useMutation(LOGIN_MUTATION);
-    const [refreshMutation] = useMutation(REFRESH_TOKEN_MUTATION);
+    const [loginMutation] = useMutation(LOGIN_MUTATION, {
+        errorPolicy: 'all', // Explicitly set to ensure errors are returned in result.error (Apollo Client 4)
+    });
+    const [refreshMutation] = useMutation(REFRESH_TOKEN_MUTATION, {
+        errorPolicy: 'all', // Explicitly set to ensure errors are returned in result.error (Apollo Client 4)
+    });
+    const [logoutMutation] = useMutation(LOGOUT_MUTATION, {
+        errorPolicy: 'all', // Explicitly set to ensure errors are returned in result.error (Apollo Client 4)
+    });
 
     const [authState, setAuthState] = useState<AuthState>({
         accessToken: null,
@@ -166,31 +174,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             setAuthState((prev) => ({ ...prev, isRefreshing: true }));
 
-            const { data } = await refreshMutation({
+            const result = await refreshMutation({
                 variables: { refreshToken: authState.refreshToken },
                 context: { skipAuth: true, endpoint: getGraphQLEndpointPath('sales-reports') },
-            }) as { data?: { refreshToken?: { accessToken: string; refreshToken?: string | null; expiresAt?: number | string | null; hashPhrase?: string | null; user?: User | null } } };
+            });
 
-            if (data?.refreshToken) {
-                const { accessToken, refreshToken, expiresAt, hashPhrase, user } = data.refreshToken;
-                const expiresAtTimestamp = typeof expiresAt === 'number'
-                    ? expiresAt
-                    : expiresAt ? new Date(expiresAt).getTime() : Date.now() + 3600000;
-
-                await processAuthResponse(
-                    accessToken,
-                    refreshToken || authState.refreshToken,
-                    user || authState.user,
-                    expiresAtTimestamp,
-                    hashPhrase ?? undefined
-                );
-
-                return accessToken;
+            const data = (result.data as any)?.refreshToken;
+            
+            // Apollo Client 4 with errorPolicy: 'all' returns errors in result.error (singular) as CombinedGraphQLErrors
+            const error = (result as any).error;
+            
+            // Check for GraphQL errors first
+            if (error) {
+                // Extract errors array from CombinedGraphQLErrors
+                const graphQLErrors = error.errors || (error.message ? [error] : []);
+                const { getApiErrorMessage } = await import('@/lib/utils/apiErrorDisplay');
+                const errorMessage = getApiErrorMessage({
+                    graphQLErrors: graphQLErrors,
+                    message: error.message || graphQLErrors[0]?.message,
+                });
+                throw new Error(errorMessage);
             }
 
-            throw new Error('Token refresh failed');
-            } catch (err) {
-                setAuthState((prev) => ({ ...prev, isRefreshing: false }));
+            if (!data || !data.accessToken) {
+                throw new Error('Token refresh failed - Invalid response from server');
+            }
+
+            const { accessToken, refreshToken, expiresAt, hashPhrase, user } = data;
+            const expiresAtTimestamp = typeof expiresAt === 'number'
+                ? expiresAt
+                : expiresAt ? new Date(expiresAt).getTime() : Date.now() + 3600000;
+
+            await processAuthResponse(
+                accessToken,
+                refreshToken || authState.refreshToken,
+                user || authState.user,
+                expiresAtTimestamp,
+                hashPhrase ?? undefined
+            );
+
+            // Show success notification for token refresh
+            toast.success('Session refreshed successfully.', {
+              duration: 3000,
+            });
+
+            return accessToken;
+        } catch (err) {
+            setAuthState((prev) => ({ ...prev, isRefreshing: false }));
             // Logout on hard fail - clear state directly to avoid circular dependency
             setAuthState({
                 accessToken: null,
@@ -266,7 +296,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 const isEmail = emailPattern.test(email);
 
-                const { data } = await loginMutation({
+                const result = await loginMutation({
                     variables: {
                         username: !isEmail ? email : undefined,
                         email: isEmail ? email : undefined,
@@ -275,46 +305,84 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         app: 'SALES_REPORTS',
                     },
                     context: { endpoint: getGraphQLEndpointPath('sales-reports') },
-                }) as { data?: { login?: { accessToken: string; refreshToken?: string | null; expiresAt?: number; expiresIn?: number; user?: User | null; hashPhrase?: string | null } } };
+                });
 
-                if (data?.login) {
-                    const { accessToken, refreshToken, expiresAt: expiresAtRaw, expiresIn, user, hashPhrase } = data.login;
+                const data = (result.data as any)?.login;
+                
+                // Apollo Client 4 with errorPolicy: 'all' returns errors in result.error (singular) as CombinedGraphQLErrors
+                // The error object has: error.message, error.errors (array), error.name = "CombinedGraphQLErrors"
+                const error = (result as any).error;
+                
+                // Check for GraphQL errors first - if errors exist, return them regardless of data
+                if (error) {
+                    // Extract errors array from CombinedGraphQLErrors
+                    const graphQLErrors = error.errors || (error.message ? [error] : []);
+                    const { getApiErrorMessage } = await import('@/lib/utils/apiErrorDisplay');
+                    const errorMessage = getApiErrorMessage({
+                        graphQLErrors: graphQLErrors,
+                        message: error.message || graphQLErrors[0]?.message,
+                    });
+                    throw new Error(errorMessage);
+                }
 
-                    const userRole = user?.role?.toUpperCase?.() ?? '';
-                    if (!userRole || !ALLOWED_ROLES.includes(userRole)) {
+                // Check if login data exists and has required fields
+                if (!data || !data.accessToken) {
+                    // If data is null or accessToken is missing, check if it's a role-based denial
+                    if (data && data.user === null && data.accessToken === null) {
+                        // Backend returned null user/token - likely role-based access denial
                         throw new Error('Access denied. Your role does not have permission to access Sales Reports.');
                     }
-
-                    if (typeof window !== 'undefined' && rememberMe !== undefined) {
-                        localStorage.setItem('sales-reports-remember-me', rememberMe ? 'true' : 'false');
-                    }
-
-                    let expiresAt: number;
-                    if (expiresAtRaw) {
-                        expiresAt = expiresAtRaw > 1000000000000 ? expiresAtRaw : expiresAtRaw * 1000;
-                    } else if (expiresIn) {
-                        expiresAt = Date.now() + (expiresIn * 1000);
-                    } else {
-                        expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000);
-                    }
-
-                    await processAuthResponse(
-                        accessToken,
-                        refreshToken ?? null,
-                        user ?? null,
-                        expiresAt,
-                        hashPhrase ?? undefined
-                    );
-
+                    throw new Error('Login failed - Invalid response from server');
                 }
+
+                const { accessToken, refreshToken, expiresAt: expiresAtRaw, expiresIn, user, hashPhrase } = data;
+
+                // Validate user role
+                const userRole = user?.role?.toUpperCase?.() ?? '';
+                if (!userRole || !ALLOWED_ROLES.includes(userRole)) {
+                    throw new Error('Access denied. Your role does not have permission to access Sales Reports.');
+                }
+
+                if (typeof window !== 'undefined' && rememberMe !== undefined) {
+                    localStorage.setItem('sales-reports-remember-me', rememberMe ? 'true' : 'false');
+                }
+
+                let expiresAt: number;
+                if (expiresAtRaw) {
+                    expiresAt = expiresAtRaw > 1000000000000 ? expiresAtRaw : expiresAtRaw * 1000;
+                } else if (expiresIn) {
+                    expiresAt = Date.now() + (expiresIn * 1000);
+                } else {
+                    expiresAt = Date.now() + (7 * 24 * 60 * 60 * 1000);
+                }
+
+                await processAuthResponse(
+                    accessToken,
+                    refreshToken ?? null,
+                    user ?? null,
+                    expiresAt,
+                    hashPhrase ?? undefined
+                );
+
+                // Show welcome notification
+                const name = user?.firstName || (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'there');
+                const hour = new Date().getHours();
+                const timeOfDay = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+                const welcomeMsg = `Welcome back, ${name}! ${timeOfDay}!`;
+                toast.success(welcomeMsg, {
+                  description: user?.firstName ? `Welcome back, ${user.firstName}! You've been successfully logged in.` : 'Login successful! Welcome back.',
+                  duration: 5000,
+                });
             } catch (error: unknown) {
+                // Re-throw if already a proper Error with message
+                if (error instanceof Error && error.message) {
+                    throw error;
+                }
+                
+                // Otherwise, extract error message using getApiErrorMessage
                 const { getApiErrorMessage } = await import('@/lib/utils/apiErrorDisplay');
-                const errorMessage = getApiErrorMessage(error);
-                const loginError = new Error(errorMessage);
-                const e = error as { graphQLErrors?: unknown[]; networkError?: unknown };
-                (loginError as Error & { graphQLErrors?: unknown[]; networkError?: unknown }).graphQLErrors = e?.graphQLErrors;
-                (loginError as Error & { graphQLErrors?: unknown[]; networkError?: unknown }).networkError = e?.networkError;
-                throw loginError;
+                const errorMessage = getApiErrorMessage(error as any);
+                throw new Error(errorMessage);
             }
         },
         [loginMutation, processAuthResponse]
@@ -323,7 +391,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Logout function with backend token revocation
     const logout = useCallback(async () => {
         try {
-            // Call backend to revoke token (fire and forget)
+            // Call GraphQL logout mutation to revoke token on backend
+            try {
+                await logoutMutation({
+                    context: { endpoint: getGraphQLEndpointPath('sales-reports') },
+                });
+            } catch (logoutError) {
+                // Log but don't fail - we'll clear client state anyway
+                console.warn('Logout mutation failed:', logoutError);
+            }
+
+            // Also call API route for cookie cleanup (fire and forget)
             try {
                 await fetch('/api/auth/logout', {
                     method: 'POST',
@@ -350,6 +428,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
             clearAuthState();
 
+            // Show logout success notification
+            toast.success('You have been successfully logged out. See you soon!', {
+              duration: 3000,
+            });
+
             // Redirect to login with redirect-back logic
             if (typeof window !== 'undefined') {
                 const currentPath = window.location.pathname + window.location.search;
@@ -363,7 +446,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }, 300);
             }
         }
-    }, [authState.accessToken, authState.refreshToken, clearAuthState, router]);
+    }, [authState.accessToken, authState.refreshToken, clearAuthState, router, logoutMutation]);
 
     // Logout from all devices
     const logoutAllDevices = useCallback(async () => {
