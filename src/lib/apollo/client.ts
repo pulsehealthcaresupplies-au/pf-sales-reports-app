@@ -9,13 +9,64 @@ import { getMainDefinition } from '@apollo/client/utilities';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
 import { getGraphQLEndpoint, getWebSocketEndpoint } from '@/config/endpoints';
-import { ROUTES } from '@/config/routes';
+import { ROUTES, getLoginUrl } from '@/config/routes';
 import {
   getAccessToken,
   getHashPhrase,
+  getRefreshToken,
   refreshAccessToken,
   clearTokens
 } from '../auth/token-manager';
+import { ErrorCode, isAuthError, isPermissionError, extractErrorCode, extractStatusCode } from '@/lib/error-handling/error-codes';
+import { handleErrorRouting } from '@/lib/error-handling/error-router';
+
+// Router instance for programmatic navigation (set by provider)
+let routerInstance: { push: (url: string) => void } | null = null;
+
+/**
+ * Set router instance for programmatic navigation from Apollo links
+ */
+export const setRouterInstance = (router: { push: (url: string) => void }) => {
+  routerInstance = router;
+};
+
+/**
+ * Redirect to login with returnUrl using Next.js router if available, otherwise window.location
+ */
+const redirectToLogin = (returnUrl?: string) => {
+  if (typeof window === 'undefined') return;
+  
+  const currentPath = returnUrl || (window.location.pathname + window.location.search);
+  const loginUrl = getLoginUrl(currentPath);
+  
+  // Use Next.js router if available (preferred for client-side navigation)
+  if (routerInstance) {
+    routerInstance.push(loginUrl);
+  } else {
+    // Fallback to window.location for cases where router isn't set yet
+    window.location.href = loginUrl;
+  }
+};
+
+/**
+ * Handle error routing based on error codes
+ */
+const handleErrorCodeRouting = (error: any): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  return handleErrorRouting(error, {
+    loginRoute: ROUTES.AUTH.LOGIN,
+    getCurrentPath: () => window.location.pathname + window.location.search,
+    navigate: (url: string) => {
+      if (routerInstance) {
+        routerInstance.push(url);
+      } else {
+        window.location.href = url;
+      }
+    },
+    clearAuth: () => clearTokens(),
+  });
+};
 
 // Types for logger
 type LogMessage = string | Error | unknown;
@@ -105,11 +156,26 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
   // Check if it's a GraphQL error
   if (CombinedGraphQLErrors.is(error)) {
     for (const graphQLError of error.errors) {
-      const errorCode = graphQLError.extensions?.code;
+      const errorCode = extractErrorCode(graphQLError);
+      const statusCode = extractStatusCode(graphQLError);
       const errorMessage = graphQLError.message || '';
 
-      // Check for authentication errors
-      if (errorCode === 'UNAUTHENTICATED' || errorCode === 'FORBIDDEN' || errorMessage.toLowerCase().includes('unauthenticated')) {
+      // Handle error code-based routing (for non-auth errors that need navigation)
+      if (!isAuthError(errorCode) && handleErrorCodeRouting(graphQLError)) {
+        return forward(operation);
+      }
+
+      // Check for authentication errors (with token refresh logic)
+      if (isAuthError(errorCode) || statusCode === 401 || errorMessage.toLowerCase().includes('authentication required')) {
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+          // No refresh token available - redirect immediately with returnUrl
+          console.log('🔄 No refresh token, redirecting to login...');
+          clearTokens();
+          handleErrorCodeRouting(graphQLError);
+          return forward(operation);
+        }
+        
         console.log('🔄 Token expired, attempting refresh...');
 
         // Create an observable to handle the async refresh and retry
@@ -128,23 +194,26 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
 
                 forward(operation).subscribe(observer);
               } else {
-                console.log('❌ Refresh failed (no token), logging out...');
+                console.log('❌ Refresh failed (no token), redirecting to login...');
                 clearTokens();
-                if (typeof window !== 'undefined') {
-                  window.location.href = ROUTES.AUTH.LOGIN;
-                }
+                handleErrorCodeRouting(graphQLError);
                 observer.error(graphQLError);
               }
             })
             .catch((e) => {
-              console.error('❌ Refresh failed with error, logging out...', e);
+              console.error('❌ Refresh failed with error, redirecting to login...', e);
               clearTokens();
-              if (typeof window !== 'undefined') {
-                window.location.href = ROUTES.AUTH.LOGIN;
-              }
+              handleErrorCodeRouting(graphQLError);
               observer.error(e);
             });
         });
+      }
+      
+      // Handle permission/forbidden errors
+      if (isPermissionError(errorCode) || statusCode === 403) {
+        console.warn('🚫 Access forbidden:', errorMessage);
+        handleErrorCodeRouting(graphQLError);
+        // Continue to forward operation so error can be handled by UI
       }
 
       logger.error('GraphQL error', {
@@ -180,7 +249,7 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
             } else {
               clearTokens();
               if (typeof window !== 'undefined' && window.location.pathname !== ROUTES.AUTH.LOGIN) {
-                window.location.href = ROUTES.AUTH.LOGIN;
+                handleErrorCodeRouting({ statusCode: 401, message: 'Authentication required' });
               }
               observer.error(error);
             }
@@ -189,11 +258,16 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
             console.error('❌ Refresh failed:', e);
             clearTokens();
             if (typeof window !== 'undefined' && window.location.pathname !== ROUTES.AUTH.LOGIN) {
-              window.location.href = ROUTES.AUTH.LOGIN;
+              handleErrorCodeRouting({ statusCode: 401, message: 'Authentication required' });
             }
             observer.error(e);
           });
       });
+    }
+    
+    // Handle other network error status codes
+    if (statusCode && statusCode >= 400) {
+      handleErrorCodeRouting({ statusCode, message: error.message || 'Network error' });
     }
 
     logger.error('Network error', {

@@ -9,6 +9,7 @@ import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { getAccessToken } from '@/lib/utils/authHeaders';
 import { getRefreshToken } from '@/lib/auth/token-manager';
 import { ThemeToggler } from '@/components/theme/ThemeToggler';
+import { PulseHealthLoader } from '@/components/LoadingSpinner';
 
 /**
  * Login Page for Sales Reports App
@@ -37,6 +38,7 @@ export default function LoginPage() {
     });
     const [isVisible, setIsVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isRedirecting, setIsRedirecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
@@ -124,9 +126,12 @@ export default function LoginPage() {
                 description: 'Redirecting to dashboard...',
             });
 
-            // Redirect to dashboard or requested page
+            setIsRedirecting(true);
             const redirect = searchParams.get('redirect') || '/dashboard';
             router.push(redirect);
+            setTimeout(() => {
+                window.location.href = redirect;
+            }, 1000);
         } catch (err: unknown) {
             // Extract error message - AuthContext throws proper Error with message
             let errorMessage = 'Login failed. Please check your credentials.';
@@ -156,13 +161,20 @@ export default function LoginPage() {
             toast.error('Login Failed', {
                 description: errorMessage,
             });
+            setIsRedirecting(false);
         } finally {
             setIsLoading(false);
         }
     };
 
+    const isPending = isLoading || isRedirecting;
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-default-50 to-default-100 p-4 relative">
+            {/* Full-screen redirect overlay with logo (same pattern as admin-dashboard page transitions) */}
+            {isPending && (
+                <PulseHealthLoader size="lg" text={isRedirecting ? 'Redirecting...' : 'Signing in...'} fullScreen />
+            )}
             <div className="fixed top-4 right-4 z-50">
                 <ThemeToggler />
             </div>
@@ -252,30 +264,35 @@ export default function LoginPage() {
                             type="submit"
                             color="primary"
                             className="w-full"
-                            isLoading={isLoading}
-                            isDisabled={isLoading}
+                            isLoading={isPending}
+                            isDisabled={isPending}
                         >
-                            {isLoading ? 'Signing in...' : 'Sign In'}
+                            {isPending ? 'Signing in...' : 'Sign In'}
                         </Button>
                     </form>
 
-                    {/* Demo Credentials */}
+                    {/* Demo credentials: match seed_all_demo (dev & test only) */}
+                    {process.env.NODE_ENV !== 'production' && (
                     <div className="mt-6 pt-4 border-t border-dashed border-default-200">
+                        <h3 className="text-sm font-semibold text-default-500 mb-3 uppercase tracking-wider">
+                            Demo credentials
+                        </h3>
                         <div
                             className="p-3 bg-primary-50 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-800/50 rounded-xl cursor-pointer hover:bg-primary-100/50 dark:hover:bg-primary-900/20 transition-colors"
                             onClick={() => {
                                 setEmail('sales@pulse.com');
-                                setPassword('sales123');
+                                setPassword('Sales123!');
                                 setFieldErrors({});
                                 setError(null);
                             }}
                         >
                             <p className="text-[10px] font-bold text-primary-500 mb-2 uppercase tracking-widest">
-                                Test Credentials
+                                Sales (seed_all_demo)
                             </p>
-                            <p className="text-[11px] text-default-600 font-mono">sales@pulse.com / sales123</p>
+                            <p className="text-[11px] text-default-600 font-mono">sales@pulse.com / Sales123!</p>
                         </div>
                     </div>
+                    )}
 
                     <div className="mt-4 text-center text-xs text-default-500">
                         <p>Access restricted to authorized personnel only</p>

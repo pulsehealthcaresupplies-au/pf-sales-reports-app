@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardBody, CardHeader } from '@heroui/react';
 import { Tabs, Tab } from '@heroui/react';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
+import { WelcomeGreeting } from '@/components/WelcomeGreeting';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { SalesReportView } from './SalesReportView';
 import { CustomerReportView } from './CustomerReportView';
 import { ProductPerformanceView } from './ProductPerformanceView';
@@ -27,9 +29,40 @@ const validTabs = ['sales', 'customers', 'products', 'credit', 'overdue', 'due-s
 export function SalesReportsDashboard() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
   const tabParam = searchParams.get('tab');
   const initialTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'sales';
   const [selectedTab, setSelectedTab] = useState(initialTab);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomeUser, setWelcomeUser] = useState<{ firstName?: string; lastName?: string; fullName?: string; email?: string } | undefined>();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const shouldShow = sessionStorage.getItem('sales_reports_show_welcome_greeting') === 'true';
+    if (!shouldShow) return;
+    const userStr = sessionStorage.getItem('sales_reports_welcome_greeting_user');
+    let userToShow = user
+      ? {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          fullName: (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName ?? user.lastName) ?? undefined,
+          email: user.email,
+        }
+      : undefined;
+    if (userStr) {
+      try {
+        userToShow = JSON.parse(userStr);
+      } catch {
+        // keep from context
+      }
+    }
+    sessionStorage.removeItem('sales_reports_show_welcome_greeting');
+    sessionStorage.removeItem('sales_reports_welcome_greeting_user');
+    queueMicrotask(() => {
+      setWelcomeUser(userToShow);
+      setShowWelcome(true);
+    });
+  }, [user]);
 
   // Sync tab with URL parameter
   useEffect(() => {
@@ -59,6 +92,11 @@ export function SalesReportsDashboard() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
+      {showWelcome && welcomeUser && (
+        <div className="mb-4">
+          <WelcomeGreeting user={welcomeUser} standalone onDismiss={() => setShowWelcome(false)} autoDismissMs={5000} />
+        </div>
+      )}
       {/* Breadcrumbs */}
       <div className="mb-4">
         <Breadcrumbs items={tabBreadcrumbs[selectedTab] || [{ label: 'Dashboard' }]} />

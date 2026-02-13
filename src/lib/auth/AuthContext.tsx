@@ -18,15 +18,14 @@ import { ROUTES, getLoginUrl } from '@/config/routes';
 import { getAuthKeys } from './auth-keys';
 import { toast } from 'sonner';
 
-// Temporary types - will be replaced with generated types after codegen
-interface User {
-    id: string;
-    email: string;
-    username: string;
-    firstName?: string;
-    lastName?: string;
-    role?: string;
-}
+import {
+    SalesReportsLoginData,
+    SalesReportsLoginVariables,
+    SalesReportsRefreshTokenData,
+    SalesReportsRefreshTokenVariables,
+    SalesReportsLogoutData,
+    User
+} from '@/lib/graphql/types/auth-types';
 
 interface AuthState {
     accessToken: string | null;
@@ -179,11 +178,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 context: { skipAuth: true, endpoint: getGraphQLEndpointPath('sales-reports') },
             });
 
-            const data = (result.data as any)?.refreshToken;
-            
+            const data = (result.data as SalesReportsRefreshTokenData | undefined | null)?.salesReportsRefreshToken;
+
+
             // Apollo Client 4 with errorPolicy: 'all' returns errors in result.error (singular) as CombinedGraphQLErrors
             const error = (result as any).error;
-            
+
             // Check for GraphQL errors first
             if (error) {
                 // Extract errors array from CombinedGraphQLErrors
@@ -215,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Show success notification for token refresh
             toast.success('Session refreshed successfully.', {
-              duration: 3000,
+                duration: 3000,
             });
 
             return accessToken;
@@ -307,12 +307,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     context: { endpoint: getGraphQLEndpointPath('sales-reports') },
                 });
 
-                const data = (result.data as any)?.login;
-                
+                const data = (result.data as SalesReportsLoginData | undefined | null)?.salesReportsLogin;
+
                 // Apollo Client 4 with errorPolicy: 'all' returns errors in result.error (singular) as CombinedGraphQLErrors
                 // The error object has: error.message, error.errors (array), error.name = "CombinedGraphQLErrors"
                 const error = (result as any).error;
-                
+
                 // Check for GraphQL errors first - if errors exist, return them regardless of data
                 if (error) {
                     // Extract errors array from CombinedGraphQLErrors
@@ -364,21 +364,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     hashPhrase ?? undefined
                 );
 
+                // Set flag to show welcome greeting on dashboard (consumed by WelcomeGreeting)
+                if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('sales_reports_show_welcome_greeting', 'true');
+                    sessionStorage.setItem('sales_reports_welcome_greeting_user', JSON.stringify({
+                        firstName: user?.firstName,
+                        lastName: user?.lastName,
+                        fullName: (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.firstName ?? user?.lastName) ?? undefined,
+                        email: user?.email,
+                    }));
+                }
+
                 // Show welcome notification
                 const name = user?.firstName || (user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'there');
                 const hour = new Date().getHours();
                 const timeOfDay = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
                 const welcomeMsg = `Welcome back, ${name}! ${timeOfDay}!`;
                 toast.success(welcomeMsg, {
-                  description: user?.firstName ? `Welcome back, ${user.firstName}! You've been successfully logged in.` : 'Login successful! Welcome back.',
-                  duration: 5000,
+                    description: user?.firstName ? `Welcome back, ${user.firstName}! You've been successfully logged in.` : 'Login successful! Welcome back.',
+                    duration: 5000,
                 });
             } catch (error: unknown) {
                 // Re-throw if already a proper Error with message
                 if (error instanceof Error && error.message) {
                     throw error;
                 }
-                
+
                 // Otherwise, extract error message using getApiErrorMessage
                 const { getApiErrorMessage } = await import('@/lib/utils/apiErrorDisplay');
                 const errorMessage = getApiErrorMessage(error as any);
@@ -430,7 +441,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Show logout success notification
             toast.success('You have been successfully logged out. See you soon!', {
-              duration: 3000,
+                duration: 3000,
             });
 
             // Redirect to login with redirect-back logic
@@ -486,12 +497,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (timeUntilRefresh <= 0) {
             const timeRemaining = expiresAt - now;
             if (timeRemaining > 0 && !authState.isRefreshing) {
-                refreshAccessToken().catch(() => {});
+                refreshAccessToken().catch(() => { });
             }
         } else {
             timer = setTimeout(() => {
                 if (!authState.isRefreshing) {
-                    refreshAccessToken().catch(() => {});
+                    refreshAccessToken().catch(() => { });
                 }
             }, timeUntilRefresh);
         }
