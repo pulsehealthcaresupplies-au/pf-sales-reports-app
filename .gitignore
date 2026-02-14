@@ -35,6 +35,7 @@ tsconfig.tsbuildinfo
 .env.production.local
 .env.staging
 .env.staging.local
+.env.alpha
 .env.*.local
 # Allow committed env examples/templates
 !.env.example

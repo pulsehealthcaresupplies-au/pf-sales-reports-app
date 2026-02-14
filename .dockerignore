@@ -72,6 +72,7 @@ playwright/.cache/
 .env.production
 .env.production.local
 .env.staging
+.env.alpha
 .env.*.local
 .dev/
 local/
