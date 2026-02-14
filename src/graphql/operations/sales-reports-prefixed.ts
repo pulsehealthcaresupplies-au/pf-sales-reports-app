@@ -71,16 +71,22 @@ export const GET_SALES_REPORTS_SALES_REPORT = gql`
  * Customer Report Query (Prefix-based)
  */
 export const GET_SALES_REPORTS_CUSTOMER_REPORT = gql`
-  query GetSalesReportsCustomerReport($startDate: String, $endDate: String, $customerType: String) {
-    salesReportsCustomerReport(startDate: $startDate, endDate: $endDate, customerType: $customerType) {
+  query GetSalesReportsCustomerReport($startDate: String, $endDate: String, $customerType: String, $page: Int, $pageSize: Int) {
+    salesReportsCustomerReport(startDate: $startDate, endDate: $endDate, customerType: $customerType, page: $page, pageSize: $pageSize) {
       period {
         ...CustomerReportPeriod
       }
       summary {
         ...CustomerSummary
       }
-      topCustomers {
+      customers {
         ...TopCustomer
+      }
+      metadata {
+        totalCount
+        page
+        pageSize
+        totalPages
       }
     }
   }
@@ -93,8 +99,8 @@ export const GET_SALES_REPORTS_CUSTOMER_REPORT = gql`
  * Profit Report Query (Prefix-based)
  */
 export const GET_SALES_REPORTS_PROFIT_REPORT = gql`
-  query GetSalesReportsProfitReport($startDate: String, $endDate: String, $groupBy: String) {
-    salesReportsProfitReport(startDate: $startDate, endDate: $endDate, groupBy: $groupBy) {
+  query GetSalesReportsProfitReport($startDate: String, $endDate: String, $warehouseId: ID, $categoryId: ID, $brandId: ID, $groupBy: String) {
+    salesReportsProfitReport(startDate: $startDate, endDate: $endDate, warehouseId: $warehouseId, categoryId: $categoryId, brandId: $brandId, groupBy: $groupBy) {
       period {
         startDate
         endDate
@@ -118,16 +124,22 @@ export const GET_SALES_REPORTS_PROFIT_REPORT = gql`
 `;
 
 /**
- * Product Performance Report Query (Prefix-based)
+ * Product Performance Query (Prefix-based)
  */
 export const GET_SALES_REPORTS_PRODUCT_PERFORMANCE_REPORT = gql`
-  query GetSalesReportsProductPerformanceReport($startDate: String, $endDate: String, $categoryId: ID, $limit: Int) {
-    salesReportsProductPerformanceReport(startDate: $startDate, endDate: $endDate, categoryId: $categoryId, limit: $limit) {
+  query GetSalesReportsProductPerformanceReport($startDate: String, $endDate: String, $categoryId: ID, $brandId: ID, $page: Int, $pageSize: Int) {
+    salesReportsProductPerformanceReport(startDate: $startDate, endDate: $endDate, categoryId: $categoryId, brandId: $brandId, page: $page, pageSize: $pageSize) {
       period {
         ...ProductReportPeriod
       }
       products {
         ...ProductPerformance
+      }
+      metadata {
+        totalCount
+        page
+        pageSize
+        totalPages
       }
     }
   }

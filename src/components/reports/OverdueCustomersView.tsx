@@ -5,8 +5,8 @@ import { useQuery } from '@apollo/client/react';
 import { Card, CardBody, CardHeader } from '@heroui/react';
 import { Button } from '@heroui/react';
 import { Input } from '@heroui/react';
-import { Select, SelectItem } from '@heroui/react';
 import { Spinner } from '@heroui/react';
+import { FilterBar } from './FilterBar';
 import { FileSpreadsheet, FileText } from 'lucide-react';
 import { GET_SALES_REPORTS_OVERDUE_CUSTOMERS } from '@/graphql/operations/sales-reports-prefixed';
 // TODO: After running npm run codegen, replace useQuery with:
@@ -102,39 +102,40 @@ export function OverdueCustomersView() {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <h3 className="text-lg font-semibold">Filters</h3>
-        </CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              type="number"
-              label="Minimum Days Overdue"
-              value={daysOverdue.toString()}
-              onChange={(e) => setDaysOverdue(parseInt(e.target.value) || 0)}
-            />
-            <Select
-              label="Credit Type"
-              selectedKeys={creditType ? [creditType] : []}
-              onSelectionChange={(keys) => {
-                const selected = Array.from(keys)[0] as string;
-                setCreditType(selected === 'all' ? undefined : selected);
-              }}
-            >
-              <SelectItem key="all">All</SelectItem>
-              <SelectItem key="B2B_CUSTOMER">B2B Customer</SelectItem>
-              <SelectItem key="DOCTOR">Doctor</SelectItem>
-              <SelectItem key="SUPPLIER">Supplier</SelectItem>
-            </Select>
-            <div className="flex items-end gap-2">
-              <Button color="primary" onClick={() => refetch()}>
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+      {/* Filters */}
+      <FilterBar
+        initialFilters={{ creditType }}
+        onFilterChange={(newFilters: any) => {
+          setCreditType(newFilters.creditType);
+          setTimeout(() => {
+            refetch({
+              daysOverdue, // This creates a slight sync issue if daysOverdue changed without Apply? 
+              // But FilterBar "Apply" triggers this. So if daysOverdue changed via input underneath, state `daysOverdue` is updated.
+              // So using `daysOverdue` from closure is correct.
+              creditType: newFilters.creditType || creditType || null,
+              page: 1, // Reset page on filter change
+              pageSize
+            });
+          }, 0);
+        }}
+        showDateRange={false}
+        showCreditType={true}
+        creditTypes={[
+          { value: 'all', label: 'All Types' },
+          { value: 'B2B_CUSTOMER', label: 'B2B Customer' },
+          { value: 'DOCTOR', label: 'Doctor' },
+          { value: 'SUPPLIER', label: 'Supplier' }
+        ]}
+      >
+        <Input
+          type="number"
+          label="Min Days Overdue"
+          placeholder="0"
+          value={daysOverdue.toString()}
+          onChange={(e) => setDaysOverdue(parseInt(e.target.value) || 0)}
+          className="max-w-[150px]"
+        />
+      </FilterBar>
 
       {/* Summary */}
       <Card>

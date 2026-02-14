@@ -26,7 +26,7 @@ import {
 
 export const GET_SALES_REPORT = gql`
   query GetSalesReport($startDate: String, $endDate: String, $warehouseId: ID, $groupBy: String) {
-    salesReport(startDate: $startDate, endDate: $endDate, warehouseId: $warehouseId, groupBy: $groupBy) {
+    salesReportsSalesReport(startDate: $startDate, endDate: $endDate, warehouseId: $warehouseId, groupBy: $groupBy) {
       period {
         ...SalesReportPeriod
       }
@@ -65,7 +65,7 @@ export const GET_SALES_REPORT = gql`
 
 export const GET_CUSTOMER_REPORT = gql`
   query GetCustomerReport($startDate: String, $endDate: String, $customerType: String) {
-    customerReport(startDate: $startDate, endDate: $endDate, customerType: $customerType) {
+    salesReportsCustomerReport(startDate: $startDate, endDate: $endDate, customerType: $customerType) {
       period {
         ...CustomerReportPeriod
       }
@@ -84,7 +84,7 @@ export const GET_CUSTOMER_REPORT = gql`
 
 export const GET_PRODUCT_PERFORMANCE_REPORT = gql`
   query GetProductPerformanceReport($startDate: String, $endDate: String, $categoryId: ID, $limit: Int) {
-    productPerformanceReport(startDate: $startDate, endDate: $endDate, categoryId: $categoryId, limit: $limit) {
+    salesReportsProductPerformanceReport(startDate: $startDate, endDate: $endDate, categoryId: $categoryId, limit: $limit) {
       period {
         ...ProductReportPeriod
       }
@@ -99,7 +99,7 @@ export const GET_PRODUCT_PERFORMANCE_REPORT = gql`
 
 export const GET_CREDIT_REPORT = gql`
   query GetCreditReport($creditType: String, $includeOverdue: Boolean, $includeDueSoon: Boolean) {
-    creditReport(creditType: $creditType, includeOverdue: $includeOverdue, includeDueSoon: $includeDueSoon) {
+    salesReportsCreditReport(creditType: $creditType, includeOverdue: $includeOverdue, includeDueSoon: $includeDueSoon) {
       summary {
         ...CreditSummary
       }
@@ -118,7 +118,7 @@ export const GET_CREDIT_REPORT = gql`
 
 export const GET_OVERDUE_CUSTOMERS = gql`
   query GetOverdueCustomers($daysOverdue: Int, $creditType: String, $page: Int, $pageSize: Int) {
-    overdueCustomers(daysOverdue: $daysOverdue, creditType: $creditType, page: $page, pageSize: $pageSize) {
+    salesReportsOverdueCustomers(daysOverdue: $daysOverdue, creditType: $creditType, page: $page, pageSize: $pageSize) {
       customers {
         ...OverdueCustomer
       }
@@ -133,7 +133,7 @@ export const GET_OVERDUE_CUSTOMERS = gql`
 
 export const GET_DUE_SOON_CUSTOMERS = gql`
   query GetDueSoonCustomers($days: Int, $creditType: String, $page: Int, $pageSize: Int) {
-    dueSoonCustomers(days: $days, creditType: $creditType, page: $page, pageSize: $pageSize) {
+    salesReportsDueSoonCustomers(days: $days, creditType: $creditType, page: $page, pageSize: $pageSize) {
       customers {
         ...DueSoonCustomer
       }
@@ -148,7 +148,7 @@ export const GET_DUE_SOON_CUSTOMERS = gql`
 
 export const GET_CREDIT_SUMMARY = gql`
   query GetCreditSummary($creditType: String, $daysAhead: Int) {
-    creditSummary(creditType: $creditType, daysAhead: $daysAhead) {
+    salesReportsCreditSummary(creditType: $creditType, daysAhead: $daysAhead) {
       ...CreditDashboardSummary
     }
   }
@@ -157,7 +157,7 @@ export const GET_CREDIT_SUMMARY = gql`
 
 export const GET_PROFIT_REPORT = gql`
   query GetProfitReport($startDate: String, $endDate: String, $groupBy: String) {
-    profitReport(startDate: $startDate, endDate: $endDate, groupBy: $groupBy) {
+    salesReportsProfitReport(startDate: $startDate, endDate: $endDate, groupBy: $groupBy) {
       period {
         startDate
         endDate

@@ -3494,20 +3494,328 @@ export type QuerySalesReportsCreditReportArgs = {
 };
 
 
-export type QuerySalesReportsCreditSummaryArgs = {
+export type SalesReportsMetadata = {
+  __typename?: 'SalesReportsMetadata';
+  page: Scalars['Int']['output'];
+  pageSize: Scalars['Int']['output'];
+  totalCount: Scalars['Int']['output'];
+  totalPages: Scalars['Int']['output'];
+};
+
+export type SalesReportsProductPerformanceReport = {
+  __typename?: 'SalesReportsProductPerformanceReport';
+  metadata?: Maybe<SalesReportsMetadata>;
+  period: SalesReportsPeriod;
+  products: Array<SalesReportsProductPerformance>;
+};
+
+export type SalesReportsCustomerReport = {
+  __typename?: 'SalesReportsCustomerReport';
+  customers: Array<SalesReportsCustomerStats>;
+  metadata?: Maybe<SalesReportsMetadata>;
+  newCustomers: Scalars['Int']['output'];
+  period: SalesReportsPeriod;
+  returningCustomers: Scalars['Int']['output'];
+  totalCustomers: Scalars['Int']['output'];
+};
+
+export type SalesReportsCustomerStats = {
+  __typename?: 'SalesReportsCustomerStats';
+  email: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  orderCount: Scalars['Int']['output'];
+  revenue: Scalars['Float']['output'];
+  userId: Scalars['ID']['output'];
+};
+
+export type SalesReportsProductPerformanceRequest = {
+  brandId?: InputMaybe<Scalars['ID']['input']>;
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SalesReportsCustomerReportRequest = {
+  customerType?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type SalesReportsProfitReportRequest = {
+  brandId?: InputMaybe<Scalars['ID']['input']>;
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  groupBy?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  warehouseId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type SalesReportsSalesReportRequest = {
+  brandId?: InputMaybe<Scalars['ID']['input']>;
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  groupBy?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  warehouseId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+// ============================================================================
+// SALES REPORTS - CREDIT REPORT TYPES
+// ============================================================================
+
+export type SalesReportsCreditOverdueSummary = {
+  __typename?: 'SalesReportsCreditOverdueSummary';
+  count: Scalars['Int']['output'];
+  totalAmount: Scalars['Float']['output'];
+};
+
+export type SalesReportsCreditDueSoonSummary = {
+  __typename?: 'SalesReportsCreditDueSoonSummary';
+  count: Scalars['Int']['output'];
+  totalAmount: Scalars['Float']['output'];
+  daysAhead: Scalars['Int']['output'];
+};
+
+export type SalesReportsCreditPendingSummary = {
+  __typename?: 'SalesReportsCreditPendingSummary';
+  count: Scalars['Int']['output'];
+};
+
+export type SalesReportsCreditActiveSummary = {
+  __typename?: 'SalesReportsCreditActiveSummary';
+  count: Scalars['Int']['output'];
+  totalCreditLimit: Scalars['Float']['output'];
+  totalCreditBalance: Scalars['Float']['output'];
+  totalAvailableCredit: Scalars['Float']['output'];
+};
+
+export type SalesReportsCreditDashboardSummary = {
+  __typename?: 'SalesReportsCreditDashboardSummary';
+  overdue: SalesReportsCreditOverdueSummary;
+  dueSoon: SalesReportsCreditDueSoonSummary;
+  pendingApproval: SalesReportsCreditPendingSummary;
+  active: SalesReportsCreditActiveSummary;
+};
+
+export type SalesReportsCreditSummary = {
+  __typename?: 'SalesReportsCreditSummary';
+  totalAccounts: Scalars['Int']['output'];
+  totalCreditLimit: Scalars['Float']['output'];
+  totalCreditBalance: Scalars['Float']['output'];
+  totalAvailableCredit: Scalars['Float']['output'];
+  utilizationRate: Scalars['Float']['output'];
+};
+
+export type SalesReportsOverdueCustomer = {
+  __typename?: 'SalesReportsOverdueCustomer';
+  accountId: Scalars['ID']['output'];
+  userId: Scalars['ID']['output'];
+  userEmail: Scalars['String']['output'];
+  userName: Scalars['String']['output'];
+  creditBalance: Scalars['Float']['output'];
+  daysOverdue: Scalars['Int']['output'];
+};
+
+export type SalesReportsDueSoonCustomer = {
+  __typename?: 'SalesReportsDueSoonCustomer';
+  accountId: Scalars['ID']['output'];
+  userId: Scalars['ID']['output'];
+  userEmail: Scalars['String']['output'];
+  userName: Scalars['String']['output'];
+  creditBalance: Scalars['Float']['output'];
+  daysUntilDue: Scalars['Int']['output'];
+};
+
+export type SalesReportsOverdueCustomersResponse = {
+  __typename?: 'SalesReportsOverdueCustomersResponse';
+  customers: Array<SalesReportsOverdueCustomer>;
+  count: Scalars['Int']['output'];
+  totalCount: Scalars['Int']['output'];
+  page: Scalars['Int']['output'];
+  pageSize: Scalars['Int']['output'];
+};
+
+export type SalesReportsDueSoonCustomersResponse = {
+  __typename?: 'SalesReportsDueSoonCustomersResponse';
+  customers: Array<SalesReportsDueSoonCustomer>;
+  count: Scalars['Int']['output'];
+  totalCount: Scalars['Int']['output'];
+  page: Scalars['Int']['output'];
+  pageSize: Scalars['Int']['output'];
+};
+
+export type SalesReportsCreditReport = {
+  __typename?: 'SalesReportsCreditReport';
+  summary: SalesReportsCreditSummary;
+  overdueCustomers: Array<SalesReportsOverdueCustomer>;
+  dueSoonCustomers: Array<SalesReportsDueSoonCustomer>;
+};
+
+// ============================================================================
+// SALES REPORTS - PROFIT REPORT TYPES
+// ============================================================================
+
+export type SalesReportsProfitSummary = {
+  __typename?: 'SalesReportsProfitSummary';
+  totalRevenue: Scalars['Float']['output'];
+  totalCost: Scalars['Float']['output'];
+  grossProfit: Scalars['Float']['output'];
+  averageMargin: Scalars['Float']['output'];
+};
+
+export type SalesReportsProfitHistoryItem = {
+  __typename?: 'SalesReportsProfitHistoryItem';
+  date: Scalars['String']['output'];
+  revenue: Scalars['Float']['output'];
+  cost: Scalars['Float']['output'];
+  profit: Scalars['Float']['output'];
+  margin: Scalars['Float']['output'];
+};
+
+export type SalesReportsPeriod = {
+  __typename?: 'SalesReportsPeriod';
+  startDate: Scalars['String']['output'];
+  endDate: Scalars['String']['output'];
+  groupBy: Scalars['String']['output'];
+};
+
+export type SalesReportsProfitReport = {
+  __typename?: 'SalesReportsProfitReport';
+  period: SalesReportsPeriod;
+  summary: SalesReportsProfitSummary;
+  history: Array<SalesReportsProfitHistoryItem>;
+};
+
+// ============================================================================
+// SALES REPORTS - SALES REPORT TYPES
+// ============================================================================
+
+export type SalesReportsSalesSummary = {
+  __typename?: 'SalesReportsSalesSummary';
+  totalOrders: Scalars['Int']['output'];
+  totalRevenue: Scalars['Float']['output'];
+  completedOrders: Scalars['Int']['output'];
+  completedRevenue: Scalars['Float']['output'];
+  averageOrderValue: Scalars['Float']['output'];
+  conversionRate: Scalars['Float']['output'];
+};
+
+export type SalesReportsPeriodRevenue = {
+  __typename?: 'SalesReportsPeriodRevenue';
+  period: Scalars['String']['output'];
+  revenue: Scalars['Float']['output'];
+  orderCount: Scalars['Int']['output'];
+};
+
+export type SalesReportsStatusRevenue = {
+  __typename?: 'SalesReportsStatusRevenue';
+  status: Scalars['String']['output'];
+  revenue: Scalars['Float']['output'];
+  orderCount: Scalars['Int']['output'];
+};
+
+export type SalesReportsPaymentMethodRevenue = {
+  __typename?: 'SalesReportsPaymentMethodRevenue';
+  paymentMethod: Scalars['String']['output'];
+  revenue: Scalars['Float']['output'];
+  orderCount: Scalars['Int']['output'];
+};
+
+export type SalesReportsWarehouseRevenue = {
+  __typename?: 'SalesReportsWarehouseRevenue';
+  warehouseId: Scalars['ID']['output'];
+  warehouseName: Scalars['String']['output'];
+  revenue: Scalars['Float']['output'];
+  orderCount: Scalars['Int']['output'];
+};
+
+export type SalesReportsProductSales = {
+  __typename?: 'SalesReportsProductSales';
+  productId: Scalars['ID']['output'];
+  productName: Scalars['String']['output'];
+  sku: Scalars['String']['output'];
+  revenue: Scalars['Float']['output'];
+  quantitySold: Scalars['Int']['output'];
+  orderCount: Scalars['Int']['output'];
+};
+
+export type SalesReportsCategorySales = {
+  __typename?: 'SalesReportsCategorySales';
+  categoryName: Scalars['String']['output'];
+  revenue: Scalars['Float']['output'];
+  orderCount: Scalars['Int']['output'];
+};
+
+export type SalesReportsSalesReport = {
+  __typename?: 'SalesReportsSalesReport';
+  period: SalesReportsPeriod;
+  summary: SalesReportsSalesSummary;
+  revenueByPeriod: Array<SalesReportsPeriodRevenue>;
+  revenueByStatus: Array<SalesReportsStatusRevenue>;
+  revenueByPaymentMethod: Array<SalesReportsPaymentMethodRevenue>;
+  revenueByWarehouse: Array<SalesReportsWarehouseRevenue>;
+  topProducts: Array<SalesReportsProductSales>;
+  topCategories: Array<SalesReportsCategorySales>;
+};
+
+// ============================================================================
+// SALES REPORTS - PRODUCT PERFORMANCE TYPES
+// ============================================================================
+
+export type SalesReportsProductPerformance = {
+  __typename?: 'SalesReportsProductPerformance';
+  productId: Scalars['ID']['output'];
+  productName: Scalars['String']['output'];
+  sku: Scalars['String']['output'];
+  categoryName: Maybe<Scalars['String']['output']>;
+  revenue: Scalars['Float']['output'];
+  quantitySold: Scalars['Int']['output'];
+  orderCount: Scalars['Int']['output'];
+  averagePrice: Scalars['Float']['output'];
+};
+
+
+export type SalesReportsQuery = {
+  __typename?: 'SalesReportsQuery';
+  salesReportsCreditReport?: Maybe<SalesReportsCreditReport>;
+  salesReportsCreditSummary?: Maybe<SalesReportsCreditDashboardSummary>;
+  salesReportsCustomerReport?: Maybe<SalesReportsCustomerReport>;
+  salesReportsDueSoonCustomers?: Maybe<SalesReportsDueSoonCustomersResponse>;
+  salesReportsOverdueCustomers?: Maybe<SalesReportsOverdueCustomersResponse>;
+  salesReportsProductPerformanceReport?: Maybe<SalesReportsProductPerformanceReport>;
+  salesReportsProfitReport?: Maybe<SalesReportsProfitReport>;
+  salesReportsSalesReport?: Maybe<SalesReportsSalesReport>;
+};
+
+
+export type SalesReportsQuerySalesReportsCreditReportArgs = {
+  creditType?: InputMaybe<Scalars['String']['input']>;
+  includeDueSoon?: InputMaybe<Scalars['Boolean']['input']>;
+  includeOverdue?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type SalesReportsQuerySalesReportsCreditSummaryArgs = {
   creditType?: InputMaybe<Scalars['String']['input']>;
   daysAhead?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
-export type QuerySalesReportsCustomerReportArgs = {
+export type SalesReportsQuerySalesReportsCustomerReportArgs = {
   customerType?: InputMaybe<Scalars['String']['input']>;
   endDate?: InputMaybe<Scalars['String']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
   startDate?: InputMaybe<Scalars['String']['input']>;
 };
 
 
-export type QuerySalesReportsDueSoonCustomersArgs = {
+export type SalesReportsQuerySalesReportsDueSoonCustomersArgs = {
   creditType?: InputMaybe<Scalars['String']['input']>;
   days?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -3515,7 +3823,7 @@ export type QuerySalesReportsDueSoonCustomersArgs = {
 };
 
 
-export type QuerySalesReportsOverdueCustomersArgs = {
+export type SalesReportsQuerySalesReportsOverdueCustomersArgs = {
   creditType?: InputMaybe<Scalars['String']['input']>;
   daysOverdue?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -3523,22 +3831,29 @@ export type QuerySalesReportsOverdueCustomersArgs = {
 };
 
 
-export type QuerySalesReportsProductPerformanceReportArgs = {
+export type SalesReportsQuerySalesReportsProductPerformanceReportArgs = {
+  brandId?: InputMaybe<Scalars['ID']['input']>;
   categoryId?: InputMaybe<Scalars['ID']['input']>;
   endDate?: InputMaybe<Scalars['String']['input']>;
-  limit?: InputMaybe<Scalars['Int']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
   startDate?: InputMaybe<Scalars['String']['input']>;
 };
 
 
-export type QuerySalesReportsProfitReportArgs = {
+export type SalesReportsQuerySalesReportsProfitReportArgs = {
+  brandId?: InputMaybe<Scalars['ID']['input']>;
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
   endDate?: InputMaybe<Scalars['String']['input']>;
   groupBy?: InputMaybe<Scalars['String']['input']>;
   startDate?: InputMaybe<Scalars['String']['input']>;
+  warehouseId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
-export type QuerySalesReportsSalesReportArgs = {
+export type SalesReportsQuerySalesReportsSalesReportArgs = {
+  brandId?: InputMaybe<Scalars['ID']['input']>;
+  categoryId?: InputMaybe<Scalars['ID']['input']>;
   endDate?: InputMaybe<Scalars['String']['input']>;
   groupBy?: InputMaybe<Scalars['String']['input']>;
   startDate?: InputMaybe<Scalars['String']['input']>;

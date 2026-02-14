@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { GET_SALES_REPORTS_PROFIT_REPORT } from '@/graphql/operations/sales-reports-prefixed';
-import { Card, CardBody, CardHeader, Button, Input, Select, SelectItem } from '@heroui/react';
+import { Card, CardBody, CardHeader, Button } from '@heroui/react';
+import { FilterBar } from './FilterBar';
 import { Download, FileSpreadsheet, TrendingUp, DollarSign, Percent } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportToCSV, exportToExcel } from '@/lib/utils/export';
@@ -126,41 +127,30 @@ export function ProfitReportView() {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <h3 className="text-lg font-semibold">Filters</h3>
-        </CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Input
-              type="date"
-              label="Start Date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-            <Input
-              type="date"
-              label="End Date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-            <Select
-              label="Group By"
-              selectedKeys={[groupBy]}
-              onSelectionChange={(keys) => setGroupBy(Array.from(keys)[0] as string)}
-            >
-              <SelectItem key="day">Day</SelectItem>
-              <SelectItem key="week">Week</SelectItem>
-              <SelectItem key="month">Month</SelectItem>
-            </Select>
-            <div className="flex items-end gap-2">
-              <Button color="primary" onPress={() => refetch()}>
-                Generate Report
-              </Button>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+      {/* Filters */}
+      <FilterBar
+        initialFilters={{ startDate, endDate, groupBy }}
+        onFilterChange={(newFilters: any) => {
+          if (newFilters.startDate) setStartDate(newFilters.startDate);
+          if (newFilters.endDate) setEndDate(newFilters.endDate);
+          if (newFilters.groupBy) setGroupBy(newFilters.groupBy);
+          // Trigger refetch with new values
+          setTimeout(() => {
+            refetch({
+              startDate: `${newFilters.startDate || startDate}T00:00:00Z`,
+              endDate: `${newFilters.endDate || endDate}T23:59:59Z`,
+              groupBy: newFilters.groupBy || groupBy
+            });
+          }, 0);
+        }}
+        showDateRange={true}
+        showGroupBy={true}
+        groupOptions={[
+          { value: 'day', label: 'Daily' },
+          { value: 'week', label: 'Weekly' },
+          { value: 'month', label: 'Monthly' }
+        ]}
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -319,7 +309,40 @@ export function ProfitReportView() {
           <h3 className="text-lg font-semibold">Profit History</h3>
         </CardHeader>
         <CardBody>
-          <div className="overflow-x-auto">
+          {/* Mobile List View */}
+          <div className="md:hidden space-y-4">
+            {history.map((item: any, index: number) => (
+              <div key={index} className="border rounded-lg p-4 space-y-2">
+                <div className="flex justify-between items-start">
+                  <h4 className="font-semibold text-small">{format(new Date(item.date), 'MMM dd, yyyy')}</h4>
+                  <span className={`text-tiny font-bold px-2 py-1 rounded-full ${(item.profit || 0) >= 0 ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'}`}>
+                    {(item.profit || 0) >= 0 ? 'Profit' : 'Loss'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-tiny">
+                  <div>
+                    <span className="text-default-500 block">Revenue</span>
+                    <span className="font-medium">${(item.revenue || 0).toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-default-500 block">Cost</span>
+                    <span className="font-medium">${(item.cost || 0).toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-default-500 block">Profit</span>
+                    <span className={`font-medium ${(item.profit || 0) >= 0 ? 'text-success-600' : 'text-danger-600'}`}>${(item.profit || 0).toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-default-500 block">Margin</span>
+                    <span className="font-medium">{((item.margin || 0) * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 dark:bg-slate-800">
                 <tr>
@@ -346,9 +369,8 @@ export function ProfitReportView() {
                     <td className="px-4 py-2 text-sm">{format(new Date(item.date), 'MMM dd, yyyy')}</td>
                     <td className="px-4 py-2 text-sm text-right">${(item.revenue || 0).toLocaleString()}</td>
                     <td className="px-4 py-2 text-sm text-right">${(item.cost || 0).toLocaleString()}</td>
-                    <td className={`px-4 py-2 text-sm text-right font-semibold ${
-                      (item.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
+                    <td className={`px-4 py-2 text-sm text-right font-semibold ${(item.profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
                       ${(item.profit || 0).toLocaleString()}
                     </td>
                     <td className="px-4 py-2 text-sm text-right">

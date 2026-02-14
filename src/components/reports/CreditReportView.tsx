@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { Card, CardBody, CardHeader } from '@heroui/react';
 import { Button } from '@heroui/react';
-import { Select, SelectItem } from '@heroui/react';
 import { Spinner } from '@heroui/react';
+import { FilterBar } from './FilterBar';
 import { FileSpreadsheet, FileText } from 'lucide-react';
 import { GET_SALES_REPORTS_CREDIT_REPORT } from '@/graphql/operations/sales-reports-prefixed';
 // TODO: After running npm run codegen, replace useQuery with:
@@ -15,8 +15,8 @@ import { toast } from 'sonner';
 
 export function CreditReportView() {
   const [creditType, setCreditType] = useState<string | undefined>(undefined);
-  const [includeOverdue] = useState(true);
-  const [includeDueSoon] = useState(true);
+  const [includeOverdue, setIncludeOverdue] = useState(true);
+  const [includeDueSoon, setIncludeDueSoon] = useState(true);
 
   // Define provisional types until codegen is run
   interface CreditReportData {
@@ -123,33 +123,33 @@ export function CreditReportView() {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <h3 className="text-lg font-semibold">Filters</h3>
-        </CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Select
-              label="Credit Type"
-              selectedKeys={creditType ? [creditType] : []}
-              onSelectionChange={(keys) => {
-                const selected = Array.from(keys)[0] as string;
-                setCreditType(selected === 'all' ? undefined : selected);
-              }}
-            >
-              <SelectItem key="all">All</SelectItem>
-              <SelectItem key="B2B_CUSTOMER">B2B Customer</SelectItem>
-              <SelectItem key="DOCTOR">Doctor</SelectItem>
-              <SelectItem key="SUPPLIER">Supplier</SelectItem>
-            </Select>
-            <div className="flex items-end gap-2">
-              <Button color="primary" onClick={() => refetch()}>
-                Generate Report
-              </Button>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+      {/* Filters */}
+      <FilterBar
+        initialFilters={{ creditType, includeOverdue, includeDueSoon }}
+        onFilterChange={(newFilters: any) => {
+          setCreditType(newFilters.creditType);
+          if (newFilters.includeOverdue !== undefined) setIncludeOverdue(newFilters.includeOverdue);
+          if (newFilters.includeDueSoon !== undefined) setIncludeDueSoon(newFilters.includeDueSoon);
+
+          setTimeout(() => {
+            refetch({
+              creditType: newFilters.creditType || creditType || null,
+              includeOverdue: newFilters.includeOverdue !== undefined ? newFilters.includeOverdue : includeOverdue,
+              includeDueSoon: newFilters.includeDueSoon !== undefined ? newFilters.includeDueSoon : includeDueSoon
+            });
+          }, 0);
+        }}
+        showDateRange={false}
+        showCreditType={true}
+        showOverdue={true}
+        showDueSoon={true}
+        creditTypes={[
+          { value: 'all', label: 'All Types' },
+          { value: 'B2B_CUSTOMER', label: 'B2B Customer' },
+          { value: 'DOCTOR', label: 'Doctor' },
+          { value: 'SUPPLIER', label: 'Supplier' }
+        ]}
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

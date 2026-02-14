@@ -1,14 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { ThemeToggler } from '@/components/theme/ThemeToggler';
-import { Navigation } from '@/components/layout/Navigation';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Header } from '@/components/layout/Header';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { Button } from '@heroui/react';
-import { LogOut, User, Settings } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ROUTES } from '@/config/routes';
 
 /**
  * Dashboard Layout
@@ -24,71 +20,26 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { user, logout } = useAuth();
-    const router = useRouter();
-
-    const handleLogout = async () => {
-        try {
-            await logout();
-            router.push(ROUTES.AUTH.LOGIN);
-        } catch {
-            // Logout error handled by AuthContext
-        }
-    };
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
+    // Ensure useAuth is used only inside ProtectedRoute implicitly by being child of it, 
+    // but here we are inside the layout component. 
+    // Layout wraps page, but ProtectedRoute wraps children? 
+    // Better to wrap entire layout content in ProtectedRoute.
 
     return (
         <ProtectedRoute>
-            <div className="min-h-screen bg-background">
-                {/* Header */}
-                <header className="sticky top-0 z-50 border-b border-default-200 bg-background/80 backdrop-blur-sm">
-                    <div className="container mx-auto flex h-16 items-center justify-between px-4">
-                        <div className="flex items-center gap-4">
-                            <h1 className="text-xl font-bold">Sales Reports</h1>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {user && (
-                                <div className="flex items-center gap-2 text-sm text-default-600">
-                                    <User className="h-4 w-4" />
-                                    <span className="hidden sm:inline">
-                                        {user.firstName || user.email}
-                                    </span>
-                                    {user.role && (
-                                        <span className="hidden sm:inline text-default-400">
-                                            ({user.role})
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-                            <Link href="/dashboard/settings">
-                                <Button
-                                    size="sm"
-                                    variant="light"
-                                    isIconOnly
-                                    aria-label="Settings"
-                                >
-                                    <Settings className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                            <ThemeToggler />
-                            <Button
-                                size="sm"
-                                variant="light"
-                                startContent={<LogOut className="h-4 w-4" />}
-                                onPress={handleLogout}
-                            >
-                                <span className="hidden sm:inline">Logout</span>
-                            </Button>
-                        </div>
-                    </div>
-                </header>
+            <div className="flex min-h-screen bg-background">
+                <Sidebar
+                    isMobileOpen={isMobileOpen}
+                    onMobileOpenChange={setIsMobileOpen}
+                />
 
-                {/* Navigation */}
-                <Navigation />
-
-                {/* Main Content */}
-                <main className="container mx-auto px-4 py-6">
-                    {children}
-                </main>
+                <div className="flex-1 flex flex-col min-h-screen lg:pl-72 transition-all duration-300">
+                    <Header onMobileOpen={() => setIsMobileOpen(true)} />
+                    <main className="flex-1 p-4 sm:p-6 overflow-x-hidden">
+                        {children}
+                    </main>
+                </div>
             </div>
         </ProtectedRoute>
     );

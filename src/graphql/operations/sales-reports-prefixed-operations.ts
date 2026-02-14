@@ -14,12 +14,16 @@ export const SALES_REPORTS_SALES_REPORT = gql`
     $startDate: String
     $endDate: String
     $warehouseId: ID
+    $categoryId: ID
+    $brandId: ID
     $groupBy: String = "day"
   ) {
     salesReportsSalesReport(
       startDate: $startDate
       endDate: $endDate
       warehouseId: $warehouseId
+      categoryId: $categoryId
+      brandId: $brandId
       groupBy: $groupBy
     ) {
       totalSales
@@ -52,31 +56,31 @@ export const SALES_REPORTS_CUSTOMER_REPORT = gql`
     $startDate: String
     $endDate: String
     $customerType: String
+    $page: Int = 1
+    $pageSize: Int = 20
   ) {
     salesReportsCustomerReport(
       startDate: $startDate
       endDate: $endDate
       customerType: $customerType
+      page: $page
+      pageSize: $pageSize
     ) {
       totalCustomers
       newCustomers
       returningCustomers
-      topCustomers {
-        customer {
-          id
-          email
-          firstName
-          lastName
-          customerType
-        }
-        totalOrders
-        totalSpent
-        averageOrderValue
+      customers {
+        userId
+        email
+        name
+        revenue
+        orderCount
       }
-      customersByType {
-        customerType
-        count
-        totalSpent
+      metadata {
+        totalCount
+        page
+        pageSize
+        totalPages
       }
       period {
         startDate
@@ -90,11 +94,17 @@ export const SALES_REPORTS_PROFIT_REPORT = gql`
   query SalesReportsProfitReport(
     $startDate: String
     $endDate: String
+    $warehouseId: ID
+    $categoryId: ID
+    $brandId: ID
     $groupBy: String = "day"
   ) {
     salesReportsProfitReport(
       startDate: $startDate
       endDate: $endDate
+      warehouseId: $warehouseId
+      categoryId: $categoryId
+      brandId: $brandId
       groupBy: $groupBy
     ) {
       totalRevenue
@@ -131,13 +141,17 @@ export const SALES_REPORTS_PRODUCT_PERFORMANCE_REPORT = gql`
     $startDate: String
     $endDate: String
     $categoryId: ID
-    $limit: Int = 20
+    $brandId: ID
+    $page: Int = 1
+    $pageSize: Int = 20
   ) {
     salesReportsProductPerformanceReport(
       startDate: $startDate
       endDate: $endDate
       categoryId: $categoryId
-      limit: $limit
+      brandId: $brandId
+      page: $page
+      pageSize: $pageSize
     ) {
       topProducts {
         product {
@@ -158,21 +172,21 @@ export const SALES_REPORTS_PRODUCT_PERFORMANCE_REPORT = gql`
         profit
         profitMargin
       }
-      productsByCategory {
-        category {
-          id
-          name
-        }
-        products {
-          product {
-            id
-            name
-            sku
-          }
-          quantitySold
-          revenue
-        }
-        totalRevenue
+      products {
+        productId
+        productName
+        sku
+        categoryName
+        revenue
+        quantitySold
+        orderCount
+        averagePrice
+      }
+      metadata {
+        totalCount
+        page
+        pageSize
+        totalPages
       }
       period {
         startDate
