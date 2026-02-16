@@ -1,11 +1,14 @@
 'use client';
 
-import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection, Avatar } from '@heroui/react';
-import { Menu, User as UserIcon, LogOut, Settings } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection, Avatar, Input } from '@heroui/react';
+import { Menu, User as UserIcon, LogOut, Settings, Search, X, Bell } from 'lucide-react';
 import { ThemeToggler } from '@/components/theme/ThemeToggler';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
+import { useIsDesktop } from '@/lib/hooks/useMediaQuery';
+import { toast } from 'sonner';
 
 interface HeaderProps {
     onMobileOpen: () => void;
@@ -14,6 +17,19 @@ interface HeaderProps {
 export function Header({ onMobileOpen }: HeaderProps) {
     const { user, logout } = useAuth();
     const router = useRouter();
+    const isDesktop = useIsDesktop();
+    const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (mobileSearchOpen) {
+            const t = setTimeout(() => {
+                (mobileSearchInputRef.current as HTMLInputElement | null)?.focus();
+            }, 50);
+            return () => clearTimeout(t);
+        }
+    }, [mobileSearchOpen]);
 
     const handleLogout = async () => {
         try {
@@ -45,10 +61,82 @@ export function Header({ onMobileOpen }: HeaderProps) {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    {/* Search icon/bar - tablet and below: positioned on right */}
+                    {!isDesktop && (
+                        <>
+                            {!mobileSearchOpen ? (
+                                <Button
+                                    isIconOnly
+                                    variant="light"
+                                    size="sm"
+                                    className="min-w-9 min-h-9 w-9 h-9"
+                                    aria-label="Search"
+                                    onPress={() => setMobileSearchOpen(true)}
+                                >
+                                    <Search className="h-5 w-5 text-foreground" />
+                                </Button>
+                            ) : (
+                                <div className="flex items-center gap-2 min-w-0 flex-1 max-w-xs">
+                                    <Input
+                                        ref={mobileSearchInputRef}
+                                        type="search"
+                                        placeholder="Search reports..."
+                                        value={searchQuery}
+                                        autoFocus
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && searchQuery.trim()) {
+                                                // Navigate to search results or filter current view
+                                                router.push(`/dashboard?search=${encodeURIComponent(searchQuery)}`);
+                                                setMobileSearchOpen(false);
+                                                setSearchQuery('');
+                                            }
+                                        }}
+                                        startContent={<Search className="text-muted-foreground" size={18} />}
+                                        endContent={
+                                            <Button
+                                                isIconOnly
+                                                variant="light"
+                                                size="sm"
+                                                aria-label="Close search"
+                                                onPress={() => {
+                                                    setMobileSearchOpen(false);
+                                                    setSearchQuery('');
+                                                }}
+                                            >
+                                                <X size={18} />
+                                            </Button>
+                                        }
+                                        variant="bordered"
+                                        classNames={{
+                                            input: 'text-sm',
+                                            inputWrapper: 'bg-muted/50 border-border',
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </>
+                    )}
                     {/* Theme Toggle */}
                     <div className="hidden sm:flex">
                         <ThemeToggler />
                     </div>
+
+                    {/* Notifications - Visible on all devices */}
+                    {user && (
+                        <Button
+                            isIconOnly
+                            variant="light"
+                            size="sm"
+                            className="min-w-9 min-h-9 w-9 h-9 relative"
+                            aria-label="Notifications"
+                            onPress={() => {
+                                toast.info('Notifications feature coming soon');
+                            }}
+                        >
+                            <Bell className="h-5 w-5 text-foreground" />
+                        </Button>
+                    )}
 
                     {/* User Profile Dropdown */}
                     <Dropdown placement="bottom-end">

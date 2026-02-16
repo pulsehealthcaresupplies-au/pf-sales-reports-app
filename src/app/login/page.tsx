@@ -162,9 +162,9 @@ export default function LoginPage() {
                 description: errorMessage,
             });
             setIsRedirecting(false);
-        } finally {
             setIsLoading(false);
         }
+        // On success keep loading until redirect; only clear on failure
     };
 
     const isPending = isLoading || isRedirecting;

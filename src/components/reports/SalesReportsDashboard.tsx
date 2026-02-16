@@ -13,7 +13,6 @@ import { ProfitReportView } from './ProfitReportView';
 import { CreditReportView } from './CreditReportView';
 import { OverdueCustomersView } from './OverdueCustomersView';
 import { DueSoonCustomersView } from './DueSoonCustomersView';
-import { QuickMenu } from '@/components/navigation/QuickMenu';
 
 const tabBreadcrumbs: Record<string, { label: string }[]> = {
   dashboard: [{ label: 'Dashboard Overview' }],
@@ -88,9 +87,6 @@ export function SalesReportsDashboard() {
           <WelcomeGreeting user={welcomeUser} standalone onDismiss={() => setShowWelcome(false)} autoDismissMs={5000} />
         </div>
       )}
-
-      {/* QuickMenu for mobile navigation */}
-      <QuickMenu />
 
       {/* Breadcrumbs */}
       <div className="mb-4">

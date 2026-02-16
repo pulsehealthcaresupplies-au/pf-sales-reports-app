@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { createPortal } from 'react-dom';
+import { useState, useEffect, useRef } from 'react';
 import {
     LayoutDashboard,
     BarChart3,
@@ -14,6 +15,8 @@ import {
     X,
     LogOut,
     Settings,
+    ChevronDown,
+    ChevronRight,
 } from 'lucide-react';
 import { Button, Avatar } from '@heroui/react';
 import { cn } from '@/lib/utils';
@@ -23,14 +26,17 @@ import { PulseLogo } from '@/components/PulseLogo';
 import { ROUTES } from '@/config/routes';
 import { useRouter } from 'next/navigation';
 
-const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, tab: null },
-    { name: 'Sales Reports', href: '/dashboard?tab=sales', icon: BarChart3, tab: 'sales' },
-    { name: 'Customer Reports', href: '/dashboard?tab=customers', icon: Users, tab: 'customers' },
-    { name: 'Product Reports', href: '/dashboard?tab=products', icon: Package, tab: 'products' },
-    { name: 'Profit Reports', href: '/dashboard?tab=profit', icon: TrendingUp, tab: 'profit' },
-    { name: 'Credit Reports', href: '/dashboard?tab=credit', icon: FileText, tab: 'credit' },
-    { name: 'Overdue', href: '/dashboard?tab=overdue', icon: AlertTriangle, tab: 'overdue' },
+const REPORTS_OPEN_KEY = 'sales-reports-sidebar-reports-open';
+
+const dashboardItem = { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, tab: null as string | null };
+
+const reportsChildren = [
+    { name: 'Sales Reports', href: '/dashboard?tab=sales', icon: BarChart3, tab: 'sales' as const },
+    { name: 'Customer Reports', href: '/dashboard?tab=customers', icon: Users, tab: 'customers' as const },
+    { name: 'Product Reports', href: '/dashboard?tab=products', icon: Package, tab: 'products' as const },
+    { name: 'Profit Reports', href: '/dashboard?tab=profit', icon: TrendingUp, tab: 'profit' as const },
+    { name: 'Credit Reports', href: '/dashboard?tab=credit', icon: FileText, tab: 'credit' as const },
+    { name: 'Overdue', href: '/dashboard?tab=overdue', icon: AlertTriangle, tab: 'overdue' as const },
 ];
 
 interface SidebarProps {
@@ -46,8 +52,38 @@ interface SidebarContentProps {
     onMobileOpenChange: (open: boolean) => void;
 }
 
+const ACTIVE_NAV_ATTR = 'data-nav-active';
+
 function SidebarContent({ pathname, currentTab, user, logout, onMobileOpenChange }: SidebarContentProps) {
     const router = useRouter();
+    const navRef = useRef<HTMLElement>(null);
+    const [reportsOpen, setReportsOpen] = useState(true);
+
+    useEffect(() => {
+        try {
+            const raw = sessionStorage.getItem(REPORTS_OPEN_KEY);
+            if (raw !== null) setReportsOpen(raw === 'true');
+        } catch {}
+    }, []);
+
+    // Scroll active nav item into view on path/tab change (e.g. after refresh)
+    useEffect(() => {
+        if (!pathname?.startsWith('/dashboard')) return;
+        const el = navRef.current?.querySelector(`[${ACTIVE_NAV_ATTR}="true"]`);
+        if (el) {
+            const t = requestAnimationFrame(() => {
+                el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+            });
+            return () => cancelAnimationFrame(t);
+        }
+    }, [pathname, currentTab]);
+
+    const setReportsOpenPersisted = (open: boolean) => {
+        setReportsOpen(open);
+        try {
+            sessionStorage.setItem(REPORTS_OPEN_KEY, String(open));
+        } catch {}
+    };
 
     const handleLogout = async () => {
         try {
@@ -57,6 +93,9 @@ function SidebarContent({ pathname, currentTab, user, logout, onMobileOpenChange
             // Logout error handled by AuthContext
         }
     };
+
+    const isDashboardActive = pathname?.startsWith('/dashboard') && currentTab === null;
+    const hasReportsActive = currentTab !== null && reportsChildren.some((r) => r.tab === currentTab);
 
     return (
         <div className="flex flex-col h-full bg-background border-r border-default-200">
@@ -77,32 +116,59 @@ function SidebarContent({ pathname, currentTab, user, logout, onMobileOpenChange
                 </Button>
             </div>
 
-            <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-                {navigation.map((item) => {
-                    // Check if this nav item is active
-                    const isActive = pathname?.startsWith('/dashboard') && (
-                        (item.tab === null && currentTab === null) ||
-                        (item.tab !== null && currentTab === item.tab)
-                    );
+            <nav ref={navRef} className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+                <Link
+                    href={dashboardItem.href}
+                    onClick={() => onMobileOpenChange(false)}
+                    className={cn(
+                        'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group',
+                        isDashboardActive ? 'bg-primary/10 text-primary font-semibold' : 'text-default-600 hover:bg-default-100 hover:text-foreground'
+                    )}
+                    {...(isDashboardActive ? { [ACTIVE_NAV_ATTR]: 'true' } : {})}
+                >
+                    <LayoutDashboard size={20} className={cn('transition-transform duration-200', isDashboardActive ? 'scale-110' : 'group-hover:scale-105')} />
+                    <span>{dashboardItem.name}</span>
+                </Link>
 
-                    const Icon = item.icon;
-                    return (
-                        <Link
-                            key={item.name}
-                            href={item.href}
-                            onClick={() => onMobileOpenChange(false)}
-                            className={cn(
-                                'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group',
-                                isActive
-                                    ? 'bg-primary/10 text-primary font-semibold'
-                                    : 'text-default-600 hover:bg-default-100 hover:text-foreground'
-                            )}
-                        >
-                            <Icon size={20} className={cn('transition-transform duration-200', isActive ? 'scale-110' : 'group-hover:scale-105')} />
-                            <span>{item.name}</span>
-                        </Link>
-                    );
-                })}
+                <div className="pt-2">
+                    <button
+                        type="button"
+                        onClick={() => setReportsOpenPersisted(!reportsOpen)}
+                        className={cn(
+                            'w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group text-left',
+                            hasReportsActive ? 'bg-primary/10 text-primary' : 'text-default-600 hover:bg-default-100 hover:text-foreground'
+                        )}
+                    >
+                        <div className="flex items-center gap-3">
+                            <BarChart3 size={20} />
+                            <span>Reports</span>
+                        </div>
+                        {reportsOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                    </button>
+                    {reportsOpen && (
+                        <div className="mt-1 ml-4 pl-4 border-l border-default-200 space-y-0.5">
+                            {reportsChildren.map((item) => {
+                                const isActive = pathname?.startsWith('/dashboard') && currentTab === item.tab;
+                                const Icon = item.icon;
+                                return (
+                                    <Link
+                                        key={item.tab}
+                                        href={item.href}
+                                        onClick={() => onMobileOpenChange(false)}
+                                        className={cn(
+                                            'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                                            isActive ? 'bg-primary/10 text-primary font-semibold' : 'text-default-600 hover:bg-default-100 hover:text-foreground'
+                                        )}
+                                        {...(isActive ? { [ACTIVE_NAV_ATTR]: 'true' } : {})}
+                                    >
+                                        <Icon size={18} />
+                                        <span>{item.name}</span>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </nav>
 
             <div className="p-4 mt-auto border-t border-default-200 space-y-4">

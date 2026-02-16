@@ -1,16 +1,19 @@
 /**
- * Standard Error Codes from API Gateway
- * These match the error codes defined in backend/api-gateway/utils/graphql_error_formatter.py
+ * Standard Error Codes from API Gateway.
+ * Synced with backend api-gateway/utils/graphql_error_formatter.py (ErrorCodes).
+ *
+ * Auth handling (UNAUTHENTICATED / TOKEN_EXPIRED / 401):
+ * - Retry with refresh token; if refresh fails or returns same auth error, logout (clear tokens + redirect to login).
  */
 
 export enum ErrorCode {
   UNAUTHENTICATED = 'UNAUTHENTICATED',
+  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
   FORBIDDEN = 'FORBIDDEN',
   BAD_REQUEST = 'BAD_REQUEST',
   NOT_FOUND = 'NOT_FOUND',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
   VALIDATION_ERROR = 'VALIDATION_ERROR',
-  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
 }
 
 /**
@@ -80,4 +83,25 @@ export function extractStatusCode(error: {
   extensions?: { code?: string; statusCode?: number };
 }): number | undefined {
   return error.extensions?.statusCode;
+}
+
+/** Auth error codes — must match backend. On these or 401: retry with refresh; if refresh fails/same → logout. */
+export const AUTH_ERROR_CODES: readonly string[] = ['UNAUTHENTICATED', 'TOKEN_EXPIRED'];
+
+/**
+ * Check if a full error indicates an auth error (for Apollo: retry with refresh; if refresh fails, logout).
+ */
+export function isAuthErrorFromError(err: {
+  extensions?: { code?: string; statusCode?: number };
+  message?: string;
+  statusCode?: number;
+}): boolean {
+  const code = err?.extensions?.code;
+  const statusCode = err?.extensions?.statusCode ?? err?.statusCode;
+  const msg = (err?.message ?? '').toLowerCase();
+  return (
+    statusCode === 401 ||
+    (typeof code === 'string' && AUTH_ERROR_CODES.includes(code)) ||
+    /unauthenticated|unauthorized|token expired|authentication required/.test(msg)
+  );
 }

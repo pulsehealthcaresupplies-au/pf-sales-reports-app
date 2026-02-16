@@ -14,10 +14,11 @@ import {
   getAccessToken,
   getHashPhrase,
   getRefreshToken,
+  shouldRefreshToken,
   refreshAccessToken,
   clearTokens
 } from '../auth/token-manager';
-import { ErrorCode, isAuthError, isPermissionError, extractErrorCode, extractStatusCode } from '@/lib/error-handling/error-codes';
+import { ErrorCode, isAuthError, isAuthErrorFromError, isPermissionError, extractErrorCode, extractStatusCode } from '@/lib/error-handling/error-codes';
 import { handleErrorRouting } from '@/lib/error-handling/error-router';
 
 // Router instance for programmatic navigation (set by provider)
@@ -112,6 +113,17 @@ export const setTokenGetter = (getter: () => string | null | Promise<string | nu
   tokenGetter = getter;
 };
 
+/** Single in-flight refresh promise so concurrent 401s share one refresh (request queuing). */
+let inFlightRefreshPromise: Promise<string | null> | null = null;
+
+function getOrRunRefresh(): Promise<string | null> {
+  if (inFlightRefreshPromise) return inFlightRefreshPromise;
+  inFlightRefreshPromise = refreshAccessToken().finally(() => {
+    inFlightRefreshPromise = null;
+  });
+  return inFlightRefreshPromise;
+}
+
 const httpLink = createHttpLink({
   uri: getGraphQLEndpoint('sales-reports'),
   credentials: 'include',
@@ -129,6 +141,11 @@ const authLink = setContext(async (_, { headers, skipAuth }) => {
         'X-App-Name': 'SALES_REPORTS',  // Legacy support
       },
     };
+  }
+
+  // Proactive refresh: if token is close to expiry, refresh once before sending (reduces 401s)
+  if (getRefreshToken() && shouldRefreshToken()) {
+    await getOrRunRefresh();
   }
 
   const token = await tokenGetter();
@@ -165,22 +182,20 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
         return forward(operation);
       }
 
-      // Check for authentication errors (with token refresh logic)
-      if (isAuthError(errorCode) || statusCode === 401 || errorMessage.toLowerCase().includes('authentication required')) {
+      // Auth errors (UNAUTHENTICATED / TOKEN_EXPIRED / 401): retry with refresh; if refresh fails, logout
+      if (isAuthErrorFromError({ extensions: graphQLError.extensions as { code?: string; statusCode?: number }, message: graphQLError.message })) {
         const refreshToken = getRefreshToken();
         if (!refreshToken) {
-          // No refresh token available - redirect immediately with returnUrl
-          console.log('🔄 No refresh token, redirecting to login...');
           clearTokens();
-          handleErrorCodeRouting(graphQLError);
+          if (typeof window !== 'undefined' && window.location.pathname !== ROUTES.AUTH.LOGIN) {
+            handleErrorCodeRouting(graphQLError);
+          }
           return forward(operation);
         }
-        
-        console.log('🔄 Token expired, attempting refresh...');
 
         // Create an observable to handle the async refresh and retry
         return new Observable<ApolloLink.Result>((observer) => {
-          refreshAccessToken()
+          getOrRunRefresh()
             .then((newToken) => {
               if (newToken) {
                 console.log('✅ Token refreshed successfully, retrying request...');
@@ -238,7 +253,7 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
     if (statusCode === 401) {
       console.log('🔄 Network 401, attempting token refresh...');
       return new Observable<ApolloLink.Result>((observer) => {
-        refreshAccessToken()
+        getOrRunRefresh()
           .then((newToken) => {
             if (newToken) {
               const oldHeaders = operation.getContext().headers;
