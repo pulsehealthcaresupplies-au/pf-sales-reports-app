@@ -16,8 +16,9 @@ import { useRouter } from 'next/navigation';
 
 export function DashboardOverviewView() {
     const router = useRouter();
-    const [startDate, setStartDate] = useState(format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'));
-    const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    // Use lazy initialization to avoid calling impure function during render
+    const [startDate, setStartDate] = useState(() => format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'));
+    const [endDate, setEndDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
     const [groupBy, setGroupBy] = useState('day');
     const [warehouseId, setWarehouseId] = useState<string | undefined>(undefined);
 

@@ -62,7 +62,12 @@ function SidebarContent({ pathname, currentTab, user, logout, onMobileOpenChange
     useEffect(() => {
         try {
             const raw = sessionStorage.getItem(REPORTS_OPEN_KEY);
-            if (raw !== null) setReportsOpen(raw === 'true');
+            if (raw !== null) {
+                // Use setTimeout to avoid synchronous setState in effect
+                setTimeout(() => {
+                    setReportsOpen(raw === 'true');
+                }, 0);
+            }
         } catch {}
     }, []);
 
