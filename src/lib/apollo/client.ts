@@ -1,7 +1,8 @@
 'use client';
 
 /* eslint-disable no-console -- Apollo/WebSocket debug logging */
-import { ApolloClient, InMemoryCache, createHttpLink, from, Observable, ApolloLink, split, CombinedGraphQLErrors, ServerError } from '@apollo/client';
+import { ApolloClient, InMemoryCache, from, Observable, ApolloLink, split, CombinedGraphQLErrors, ServerError, Operation } from '@apollo/client';
+import UploadHttpLink from 'apollo-upload-client/UploadHttpLink.mjs';
 import { setContext } from '@apollo/client/link/context';
 import { ErrorLink } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
@@ -124,19 +125,26 @@ function getOrRunRefresh(): Promise<string | null> {
   return inFlightRefreshPromise;
 }
 
-const httpLink = createHttpLink({
+// UploadHttpLink handles file uploads (multipart/form-data) and regular GraphQL requests
+const httpLink = new UploadHttpLink({
   uri: getGraphQLEndpoint('sales-reports'),
   credentials: 'include',
 });
 
 // Auth link with secure header management
-const authLink = setContext(async (_, { headers, skipAuth }) => {
+const authLink = setContext(async (operation, { headers, skipAuth }) => {
+  // Detect if operation has file upload (File/Blob in variables)
+  const hasFileUpload = operation?.variables && Object.values(operation.variables).some(
+    (value) => value instanceof File || value instanceof Blob || (Array.isArray(value) && value.some((v: any) => v instanceof File || v instanceof Blob))
+  );
+
   // Skip auth if explicitly requested (for public queries)
   if (skipAuth || typeof window === 'undefined') {
     return {
       headers: {
         ...headers,
-        'Content-Type': 'application/json',
+        // For file uploads, omit Content-Type so UploadHttpLink can set multipart/form-data with boundary
+        ...(hasFileUpload ? {} : { 'Content-Type': 'application/json' }),
         'x-app': 'SALES_REPORTS',  // App identifier
         'X-App-Name': 'SALES_REPORTS',  // Legacy support
       },
@@ -156,7 +164,8 @@ const authLink = setContext(async (_, { headers, skipAuth }) => {
       ...headers,
       authorization: token ? `Bearer ${token}` : '',
       ...(hashPhrase ? { 'Hash-Phrase': hashPhrase } : {}),
-      'Content-Type': 'application/json',
+      // For file uploads, omit Content-Type so UploadHttpLink can set multipart/form-data with boundary
+      ...(hasFileUpload ? {} : { 'Content-Type': 'application/json' }),
       'x-app': 'SALES_REPORTS',
       'X-App-Name': 'SALES_REPORTS',
     },
@@ -349,8 +358,11 @@ export function getApolloClient(): ApolloClient {
         url: wsEndpoint,
         connectionParams: async () => {
           const token = await tokenGetter();
+          const hashPhrase = getHashPhrase();
           return {
             authorization: token ? `Bearer ${token}` : '',
+            'X-App-Name': 'SALES_REPORTS',
+            ...(hashPhrase ? { 'Hash-Phrase': hashPhrase } : {}),
           };
         },
         on: {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { Card, CardBody, CardHeader, Pagination, Button, Input, Spinner, Select, SelectItem, Tab, Tabs } from '@heroui/react';
+import { Card, CardBody, Pagination, Button, Spinner } from '@heroui/react';
 import { FilterBar } from './FilterBar';
 import { FileSpreadsheet, FileText, LayoutGrid, List as ListIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -21,7 +21,7 @@ export function ProductPerformanceView() {
   const [startDate, setStartDate] = useState(getDefaultStartDate);
   const [endDate, setEndDate] = useState(getDefaultEndDate);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, _setPageSize] = useState(20);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   const { data, loading, error, refetch } = useQuery<any>(GET_SALES_REPORTS_PRODUCT_PERFORMANCE_REPORT, {

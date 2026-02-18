@@ -9,10 +9,10 @@
 
 import { ReactNode, useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation } from '@apollo/client/react';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import { InactivityWarningModal } from '@/components/InactivityWarningModal';
-import { clearTokens, getAccessToken } from '@/lib/auth/token-manager';
+import { clearTokens } from '@/lib/auth/token-manager';
+import { getAuthKeys } from '@/lib/auth/auth-keys';
 import { ROUTES } from '@/config/routes';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth/AuthContext';
@@ -40,20 +40,31 @@ export interface InactivityProviderProps {
 export function InactivityProvider({
   children,
   appName,
-  tokenKey = 'sales_reports_access_token',
-  refreshTokenKey = 'sales_reports_refresh_token',
+  tokenKey,
+  refreshTokenKey,
   loginRoute = ROUTES.AUTH.LOGIN,
   onLogout,
   onRefreshToken,
-  inactivityPeriod = 5 * 60 * 1000, // Default: 5 minutes
-  warningPeriod = 30 * 1000, // Default: 30 seconds
+  inactivityPeriod = 5 * 60 * 1000, // Default: 5 minutes (configurable 5-10 minutes)
+  warningPeriod = 60 * 1000, // Default: 1 minute warning before logout
 }: InactivityProviderProps) {
   const router = useRouter();
   const { logout: authLogout, refreshAccessToken } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Get default token keys from auth-keys if not provided
+  const _authKeys = getAuthKeys();
+  const _defaultTokenKey = tokenKey || _authKeys.accessToken;
+  const _defaultRefreshTokenKey = refreshTokenKey || _authKeys.refreshToken;
 
   // Handle logout
   const handleLogout = useCallback(async () => {
+    // Show logout notification
+    toast.info('You\'ve been successfully logged out', {
+      description: 'Your session has expired due to inactivity.',
+      duration: 5000,
+    });
+
     if (onLogout) {
       await onLogout();
     } else {
@@ -79,8 +90,17 @@ export function InactivityProvider({
   const { isWarningActive, warningRemainingSeconds, resetTimer } = useInactivityTimeout({
     inactivityPeriod,
     warningPeriod,
-    onShowWarning: () => {
+    onShowWarning: (remainingSeconds) => {
       console.log(`[InactivityProvider] Warning: User inactive for ${inactivityPeriod / 60000} minutes`);
+      // Show toast notification when warning starts (1 minute before logout)
+      toast.warning(
+        `You will be logged out in ${remainingSeconds} seconds due to inactivity`,
+        {
+          description: 'Click "Stay Logged In" in the modal to continue your session.',
+          duration: Math.min(remainingSeconds * 1000, 10000), // Show for up to 10 seconds or until logout
+          id: 'inactivity-warning', // Use ID to prevent duplicate toasts
+        }
+      );
     },
     onWarningTick: (remainingSeconds) => {
       // Optional: Log countdown

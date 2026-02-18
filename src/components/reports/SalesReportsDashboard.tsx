@@ -29,7 +29,7 @@ const validTabs = ['dashboard', 'sales', 'customers', 'products', 'profit', 'cre
 
 export function SalesReportsDashboard() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const _router = useRouter();
   const { user } = useAuth();
   const tabParam = searchParams.get('tab');
   const initialTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'dashboard';

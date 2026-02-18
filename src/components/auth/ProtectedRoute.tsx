@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { User } from '@/lib/graphql/types/auth-types'; // Import User type
 import { ROUTES } from '@/config/routes';
 import { toast } from 'sonner';
 import { Spinner } from '@heroui/react';

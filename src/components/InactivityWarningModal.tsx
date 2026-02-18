@@ -31,7 +31,7 @@ export function InactivityWarningModal({
   remainingSeconds,
   onStayLoggedIn,
   onLogoutNow,
-  appName = 'Application',
+  appName: _appName = 'Application',
   isLoading = false,
 }: InactivityWarningModalProps) {
   const [progress, setProgress] = useState(100);
@@ -47,8 +47,8 @@ export function InactivityWarningModal({
   };
 
   useEffect(() => {
-    // Update progress bar based on remaining seconds (30 seconds total)
-    const totalSeconds = 30;
+    // Calculate progress based on 60 seconds (1 minute) warning period
+    const totalSeconds = 60;
     const progressValue = (remainingSeconds / totalSeconds) * 100;
     setProgress(Math.max(0, Math.min(100, progressValue)));
   }, [remainingSeconds]);

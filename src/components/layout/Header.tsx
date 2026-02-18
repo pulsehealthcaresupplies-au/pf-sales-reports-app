@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, DropdownSection, Avatar, Input } from '@heroui/react';
-import { Menu, User as UserIcon, LogOut, Settings, Search, X, Bell } from 'lucide-react';
+import { Menu, LogOut, Settings, Search, X, Bell } from 'lucide-react';
 import { ThemeToggler } from '@/components/theme/ThemeToggler';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';

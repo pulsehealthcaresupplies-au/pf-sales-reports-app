@@ -10,6 +10,7 @@ import { getAccessToken } from '@/lib/utils/authHeaders';
 import { getRefreshToken } from '@/lib/auth/token-manager';
 import { ThemeToggler } from '@/components/theme/ThemeToggler';
 import { PulseHealthLoader } from '@/components/LoadingSpinner';
+import { ROUTES } from '@/config/routes';
 
 /**
  * Login Page for Sales Reports App
@@ -103,6 +104,13 @@ export default function LoginPage() {
 
             await login(finalEmail, password, rememberMe);
 
+            // Prevent duplicate redirects
+            if (isRedirecting) {
+                return;
+            }
+
+            setIsRedirecting(true);
+
             // Set HttpOnly cookies via API route for middleware (token-manager = single source, same as admin-dashboard)
             try {
                 const token = getAccessToken();
@@ -122,16 +130,30 @@ export default function LoginPage() {
                 // Continue with localStorage if cookie set fails
             }
 
-            toast.success('Login successful!', {
-                description: 'Redirecting to dashboard...',
-            });
+            // Welcome greeting is handled in AuthContext.tsx, but we ensure redirect logic is correct
+            // Priority: URL param > sessionStorage > default to dashboard
+            // If no cached redirect_url (e.g., after token expiration), default to dashboard
+            const redirectToParam = searchParams.get('redirect') || searchParams.get('returnUrl');
+            const fromStorage = typeof window !== 'undefined' 
+                ? sessionStorage.getItem('auth_return_url') || sessionStorage.getItem('sales_reports_return_url')
+                : null;
+            // Only use stored URL if it exists and is not empty, otherwise default to dashboard
+            const targetPath = redirectToParam 
+                ? decodeURIComponent(redirectToParam)
+                : (fromStorage && fromStorage.trim() ? fromStorage : ROUTES.DASHBOARD);
 
-            setIsRedirecting(true);
-            const redirect = searchParams.get('redirect') || '/dashboard';
-            router.push(redirect);
+            // Clear the saved return URL from sessionStorage after using it
+            if (typeof window !== 'undefined') {
+                sessionStorage.removeItem('auth_return_url');
+                sessionStorage.removeItem('sales_reports_return_url');
+            }
+
+            // Use a single redirect with proper transition
+            // Small delay to ensure state updates complete and show success message
             setTimeout(() => {
-                window.location.href = redirect;
-            }, 1000);
+                router.push(targetPath);
+                router.refresh();
+            }, 300);
         } catch (err: unknown) {
             // Extract error message - AuthContext throws proper Error with message
             let errorMessage = 'Login failed. Please check your credentials.';

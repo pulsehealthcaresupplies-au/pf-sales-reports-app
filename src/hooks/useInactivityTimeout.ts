@@ -10,6 +10,7 @@
  * - Works even when app is hidden/minimized
  * - Tracks activity via mouse, keyboard, touch, scroll events
  * - WebSocket activity also resets timer
+ * - app:pageActivity (from Apollo/link): page ops reset timer; health/refreshToken do NOT.
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
@@ -57,11 +58,15 @@ export function useInactivityTimeout(config: InactivityTimeoutConfig) {
   const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activityUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
   const warningIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const warningCancelledRef = useRef<boolean>(false); // Track if warning was cancelled to prevent race conditions
 
   // Reset inactivity timer
   const resetInactivityTimer = useCallback(() => {
     const now = Date.now();
     lastActivityRef.current = now;
+
+    // Mark warning as cancelled to prevent race conditions
+    warningCancelledRef.current = true;
 
     // Clear existing timers
     if (inactivityTimerRef.current) {
@@ -85,6 +90,9 @@ export function useInactivityTimeout(config: InactivityTimeoutConfig) {
 
     // Set new inactivity timer
     inactivityTimerRef.current = setTimeout(() => {
+      // Reset cancellation flag for new warning cycle
+      warningCancelledRef.current = false;
+      
       // Show warning
       setIsWarningActive(true);
       setWarningRemainingSeconds(Math.floor(warningPeriod / 1000));
@@ -96,6 +104,15 @@ export function useInactivityTimeout(config: InactivityTimeoutConfig) {
       // Start warning countdown
       let remaining = Math.floor(warningPeriod / 1000);
       warningIntervalRef.current = setInterval(() => {
+        // Check if warning was cancelled before proceeding
+        if (warningCancelledRef.current) {
+          if (warningIntervalRef.current) {
+            clearInterval(warningIntervalRef.current);
+            warningIntervalRef.current = null;
+          }
+          return;
+        }
+
         remaining -= 1;
         setWarningRemainingSeconds(remaining);
         
@@ -104,6 +121,15 @@ export function useInactivityTimeout(config: InactivityTimeoutConfig) {
         }
 
         if (remaining <= 0) {
+          // Check again before logout to prevent race condition
+          if (warningCancelledRef.current) {
+            if (warningIntervalRef.current) {
+              clearInterval(warningIntervalRef.current);
+              warningIntervalRef.current = null;
+            }
+            return;
+          }
+          
           // Time's up - logout
           if (warningIntervalRef.current) {
             clearInterval(warningIntervalRef.current);
@@ -118,6 +144,15 @@ export function useInactivityTimeout(config: InactivityTimeoutConfig) {
 
       // Set final logout timer as backup
       warningTimerRef.current = setTimeout(() => {
+        // Check if warning was cancelled before logout
+        if (warningCancelledRef.current) {
+          if (warningIntervalRef.current) {
+            clearInterval(warningIntervalRef.current);
+            warningIntervalRef.current = null;
+          }
+          return;
+        }
+
         if (warningIntervalRef.current) {
           clearInterval(warningIntervalRef.current);
           warningIntervalRef.current = null;
@@ -190,6 +225,8 @@ export function useInactivityTimeout(config: InactivityTimeoutConfig) {
     };
     
     window.addEventListener('websocket:activity', handleWebSocketActivity);
+    const handlePageActivity = () => handleActivity();
+    window.addEventListener('app:pageActivity', handlePageActivity);
 
     // Initialize timer
     resetInactivityTimer();
@@ -212,7 +249,8 @@ export function useInactivityTimeout(config: InactivityTimeoutConfig) {
       });
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('websocket:activity', handleWebSocketActivity);
-      
+      window.removeEventListener('app:pageActivity', handlePageActivity);
+
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
       }
