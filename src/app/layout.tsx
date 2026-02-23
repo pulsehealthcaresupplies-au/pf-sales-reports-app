@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { DynamicProviders } from '@/components/providers/DynamicProviders';
 import { ConsoleSuppressor } from '@/components/ConsoleSuppressor';
-import './globals.css';
+import { PwaSwRegistration } from '@/components/pwa/PwaSwRegistration';
+import './globals.scss';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -36,6 +37,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body className={inter.className} suppressHydrationWarning>
         <ConsoleSuppressor />
+        <PwaSwRegistration />
         <DynamicProviders apiBaseUrl={apiBaseUrl}>{children}</DynamicProviders>
       </body>
     </html>

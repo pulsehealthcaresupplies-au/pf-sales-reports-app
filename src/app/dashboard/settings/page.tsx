@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardBody, CardHeader } from '@heroui/react';
 import { Button, Input } from '@heroui/react';
-import { Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock, Eye, EyeOff, Bell } from 'lucide-react';
+import { PushNotificationManager } from '@/components/pwa/PushNotificationManager';
 import { toast } from 'sonner';
 import { useMutation } from '@apollo/client/react';
 import { gql } from '@apollo/client';
@@ -244,6 +245,19 @@ export default function SettingsPage() {
             </form>
           </CardBody>
         )}
+      </Card>
+
+      <Card className="shadow-lg">
+        <CardHeader className="flex items-center gap-2">
+          <Bell className="h-5 w-5" />
+          <h2 className="text-xl font-semibold">Browser push notifications</h2>
+        </CardHeader>
+        <CardBody>
+          <p className="text-sm text-default-500 mb-4">
+            Get alerts even when the app is in the background. Requires HTTPS and notification permission.
+          </p>
+          <PushNotificationManager />
+        </CardBody>
       </Card>
     </div>
   );

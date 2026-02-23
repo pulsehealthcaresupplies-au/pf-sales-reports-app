@@ -1,0 +1,16 @@
+@use 'variables' as v;
+
+@layer base {
+  :root {
+    @each $key, $value in v.$light {
+      --#{$key}: #{$value};
+    }
+    --radius: #{v.$radius};
+  }
+
+  .dark {
+    @each $key, $value in v.$dark {
+      --#{$key}: #{$value};
+    }
+  }
+}

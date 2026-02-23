@@ -1,18 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Breadcrumbs } from '@/components/ui/breadcrumbs';
 import { WelcomeGreeting } from '@/components/WelcomeGreeting';
 import { useAuth } from '@/lib/auth/AuthContext';
-import { DashboardOverviewView } from './DashboardOverviewView';
-import { SalesReportView } from './SalesReportView';
-import { CustomerReportView } from './CustomerReportView';
-import { ProductPerformanceView } from './ProductPerformanceView';
-import { ProfitReportView } from './ProfitReportView';
-import { CreditReportView } from './CreditReportView';
-import { OverdueCustomersView } from './OverdueCustomersView';
-import { DueSoonCustomersView } from './DueSoonCustomersView';
+
+// Next.js requires dynamic() options to be an object literal (see invalid-dynamic-options-type)
+const loadingFallback = () => <div className="flex items-center justify-center min-h-[200px] text-default-500">Loading report…</div>;
+const DashboardOverviewView = dynamic(() => import('./DashboardOverviewView').then((m) => m.DashboardOverviewView), { ssr: false, loading: loadingFallback });
+const SalesReportView = dynamic(() => import('./SalesReportView').then((m) => m.SalesReportView), { ssr: false, loading: loadingFallback });
+const CustomerReportView = dynamic(() => import('./CustomerReportView').then((m) => m.CustomerReportView), { ssr: false, loading: loadingFallback });
+const ProductPerformanceView = dynamic(() => import('./ProductPerformanceView').then((m) => m.ProductPerformanceView), { ssr: false, loading: loadingFallback });
+const ProfitReportView = dynamic(() => import('./ProfitReportView').then((m) => m.ProfitReportView), { ssr: false, loading: loadingFallback });
+const CreditReportView = dynamic(() => import('./CreditReportView').then((m) => m.CreditReportView), { ssr: false, loading: loadingFallback });
+const OverdueCustomersView = dynamic(() => import('./OverdueCustomersView').then((m) => m.OverdueCustomersView), { ssr: false, loading: loadingFallback });
+const DueSoonCustomersView = dynamic(() => import('./DueSoonCustomersView').then((m) => m.DueSoonCustomersView), { ssr: false, loading: loadingFallback });
 
 const tabBreadcrumbs: Record<string, { label: string }[]> = {
   dashboard: [{ label: 'Dashboard Overview' }],

@@ -191,8 +191,15 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
         return forward(operation);
       }
 
-      // Auth errors (UNAUTHENTICATED / TOKEN_EXPIRED / 401): retry with refresh; if refresh fails, logout
+      // Auth errors (UNAUTHENTICATED / TOKEN_EXPIRED / 401): try refresh once, retry failed op; if already retried or refresh fails, logout (no further retries).
       if (isAuthErrorFromError({ extensions: graphQLError.extensions as { code?: string; statusCode?: number }, message: graphQLError.message })) {
+        if (operation.getContext().authRetried) {
+          clearTokens();
+          if (typeof window !== 'undefined' && window.location.pathname !== ROUTES.AUTH.LOGIN) {
+            handleErrorCodeRouting(graphQLError);
+          }
+          return new Observable<ApolloLink.Result>((observer) => observer.error(new Error('Session expired')));
+        }
         const refreshToken = getRefreshToken();
         if (!refreshToken) {
           clearTokens();
@@ -202,20 +209,17 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
           return forward(operation);
         }
 
-        // Create an observable to handle the async refresh and retry
         return new Observable<ApolloLink.Result>((observer) => {
           getOrRunRefresh()
             .then((newToken) => {
               if (newToken) {
                 console.log('✅ Token refreshed successfully, retrying request...');
-                const oldHeaders = operation.getContext().headers;
+                const ctx = operation.getContext();
                 operation.setContext({
-                  headers: {
-                    ...oldHeaders,
-                    authorization: `Bearer ${newToken}`,
-                  },
+                  ...ctx,
+                  headers: { ...ctx.headers, authorization: `Bearer ${newToken}` },
+                  authRetried: true,
                 });
-
                 forward(operation).subscribe(observer);
               } else {
                 console.log('❌ Refresh failed (no token), redirecting to login...');
@@ -260,14 +264,23 @@ const errorLink = new ErrorLink(({ error, operation, forward }) => {
     const statusCode = ServerError.is(error) ? error.statusCode : (error as Error & { statusCode?: number }).statusCode;
     
     if (statusCode === 401) {
+      if (operation.getContext().authRetried) {
+        clearTokens();
+        if (typeof window !== 'undefined' && window.location.pathname !== ROUTES.AUTH.LOGIN) {
+          handleErrorCodeRouting({ statusCode: 401, message: 'Authentication required' });
+        }
+        return new Observable<ApolloLink.Result>((observer) => observer.error(new Error('Session expired')));
+      }
       console.log('🔄 Network 401, attempting token refresh...');
       return new Observable<ApolloLink.Result>((observer) => {
         getOrRunRefresh()
           .then((newToken) => {
             if (newToken) {
-              const oldHeaders = operation.getContext().headers;
+              const ctx = operation.getContext();
               operation.setContext({
-                headers: { ...oldHeaders, authorization: `Bearer ${newToken}` },
+                ...ctx,
+                headers: { ...ctx.headers, authorization: `Bearer ${newToken}` },
+                authRetried: true,
               });
               forward(operation).subscribe(observer);
             } else {

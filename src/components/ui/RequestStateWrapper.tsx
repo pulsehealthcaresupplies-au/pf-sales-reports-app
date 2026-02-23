@@ -4,6 +4,7 @@ import React, { ReactNode, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { RequestState } from '@/lib/graphql/operations/types/response-types';
 import { ROUTES } from '@/config/routes';
+import { getApiErrorMessage, toApiErrorLike, isAuthErrorFromError } from '@/utils/api-response';
 import { DashboardSkeleton, TableSkeleton, CardSkeleton, ListSkeleton, ReportChartSkeleton } from '@/components/loading-skeleton';
 
 interface RequestStateWrapperProps {
@@ -44,15 +45,16 @@ export function RequestStateWrapper({
 }: RequestStateWrapperProps) {
     const router = useRouter();
 
-    // Handle authentication errors
+    // Handle authentication errors (use standard code/status from API Gateway)
     useEffect(() => {
         if (error && redirectOnAuthError) {
-            const isAuthError =
+            const isAuth =
+                isAuthErrorFromError(error as { message?: string; extensions?: { code?: string; statusCode?: number }; statusCode?: number }) ||
                 error.message?.toLowerCase().includes('unauthenticated') ||
                 error.message?.toLowerCase().includes('unauthorized') ||
                 error.message?.toLowerCase().includes('token');
 
-            if (isAuthError) {
+            if (isAuth) {
                 router.push(redirectPath);
                 return;
             }
@@ -86,15 +88,17 @@ export function RequestStateWrapper({
 
     // Error state
     if (state === 'error' && error) {
-        // Don't render children on error if it's an auth error (will redirect)
-        const isAuthError =
+        const isAuth =
+            isAuthErrorFromError(error as { message?: string; extensions?: { code?: string; statusCode?: number }; statusCode?: number }) ||
             error.message?.toLowerCase().includes('unauthenticated') ||
             error.message?.toLowerCase().includes('unauthorized') ||
             error.message?.toLowerCase().includes('token');
 
-        if (isAuthError && redirectOnAuthError) {
+        if (isAuth && redirectOnAuthError) {
             return null; // Will redirect
         }
+
+        const displayMessage = getApiErrorMessage(toApiErrorLike(error));
 
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] p-6">
@@ -102,7 +106,7 @@ export function RequestStateWrapper({
                     <h2 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">
                         Error Loading Data
                     </h2>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">{error.message}</p>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4">{displayMessage}</p>
                     <button
                         onClick={() => window.location.reload()}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

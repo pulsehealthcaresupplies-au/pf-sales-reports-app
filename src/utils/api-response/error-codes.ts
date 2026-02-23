@@ -1,6 +1,7 @@
 /**
  * Standard Error Codes from API Gateway.
  * Synced with backend api-gateway/utils/graphql_error_formatter.py (ErrorCodes).
+ * UNAUTHENTICATED / TOKEN_EXPIRED (401): retry with refresh token; if refresh fails or returns same, logout (clear tokens + redirect to login).
  */
 
 export enum ErrorCode {
@@ -13,6 +14,9 @@ export enum ErrorCode {
   VALIDATION_ERROR = 'VALIDATION_ERROR',
 }
 
+/**
+ * HTTP Status Code mapping for error codes
+ */
 export const ERROR_CODE_STATUS_MAP: Record<ErrorCode, number> = {
   [ErrorCode.UNAUTHENTICATED]: 401,
   [ErrorCode.FORBIDDEN]: 403,
@@ -23,6 +27,9 @@ export const ERROR_CODE_STATUS_MAP: Record<ErrorCode, number> = {
   [ErrorCode.TOKEN_EXPIRED]: 401,
 };
 
+/**
+ * Check if an error code indicates an authentication error
+ */
 export function isAuthError(errorCode: string | undefined): boolean {
   return (
     errorCode === ErrorCode.UNAUTHENTICATED ||
@@ -32,22 +39,34 @@ export function isAuthError(errorCode: string | undefined): boolean {
   );
 }
 
+/**
+ * Check if an error code indicates an authorization/permission error
+ */
 export function isPermissionError(errorCode: string | undefined): boolean {
   return errorCode === ErrorCode.FORBIDDEN || errorCode === 'FORBIDDEN';
 }
 
+/**
+ * Check if an error code indicates a client error (4xx)
+ */
 export function isClientError(errorCode: string | undefined): boolean {
   if (!errorCode) return false;
   const statusCode = ERROR_CODE_STATUS_MAP[errorCode as ErrorCode];
   return statusCode ? statusCode >= 400 && statusCode < 500 : false;
 }
 
+/**
+ * Check if an error code indicates a server error (5xx)
+ */
 export function isServerError(errorCode: string | undefined): boolean {
   if (!errorCode) return false;
   const statusCode = ERROR_CODE_STATUS_MAP[errorCode as ErrorCode];
   return statusCode ? statusCode >= 500 : false;
 }
 
+/**
+ * Extract error code from GraphQL error extensions or API response body (top-level code)
+ */
 export function extractErrorCode(error: {
   extensions?: { code?: string; statusCode?: number };
   message?: string;
@@ -56,8 +75,16 @@ export function extractErrorCode(error: {
   return error.code ?? error.extensions?.code;
 }
 
+/**
+ * Auth error codes — must match backend api-gateway/utils/graphql_error_formatter.py ErrorCodes.
+ * On these (or 401): retry with refresh token; if refresh returns same or fails, logout.
+ */
 export const AUTH_ERROR_CODES: readonly string[] = ['UNAUTHENTICATED', 'TOKEN_EXPIRED'];
 
+/**
+ * Check if a full error (GraphQL or network) indicates an auth error.
+ * Use for Apollo error link: retry with refresh; if refresh fails, logout.
+ */
 export function isAuthErrorFromError(err: {
   extensions?: { code?: string; statusCode?: number };
   message?: string;
@@ -73,6 +100,9 @@ export function isAuthErrorFromError(err: {
   );
 }
 
+/**
+ * Extract HTTP status code from GraphQL error extensions or API response body (top-level statusCode)
+ */
 export function extractStatusCode(error: {
   extensions?: { code?: string; statusCode?: number };
   statusCode?: number;
@@ -80,6 +110,9 @@ export function extractStatusCode(error: {
   return error.statusCode ?? error.extensions?.statusCode;
 }
 
+/**
+ * Extract message from GraphQL error or API response body (top-level message)
+ */
 export function extractMessage(error: { message?: string }): string | undefined {
   return error.message;
 }

@@ -42,6 +42,8 @@ ARG NEXT_PUBLIC_WS_URL
 ARG NEXT_PUBLIC_WS_AUTH_URL
 ARG NEXT_PUBLIC_WS_NOTIFICATIONS_URL
 ARG NEXT_PUBLIC_CSP_IMG_ORIGINS
+# Web Push (VAPID) – public key baked into client; private key injected at runtime from ECS/K8s secrets
+ARG NEXT_PUBLIC_VAPID_PUBLIC_KEY
 #
 # Required at build time to avoid "Failed to find Server Action 'x'" in production (Next.js Server Action IDs).
 # Generate once: openssl rand -base64 32. Same value must be set at runtime in ECS task definition.
@@ -58,6 +60,7 @@ ENV NEXT_PUBLIC_WS_NOTIFICATIONS_URL=${NEXT_PUBLIC_WS_NOTIFICATIONS_URL:-}
 ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3004}
 ENV NEXT_PUBLIC_PULSE_CORE_URL=${NEXT_PUBLIC_PULSE_CORE_URL:-}
 ENV NEXT_PUBLIC_CSP_IMG_ORIGINS=${NEXT_PUBLIC_CSP_IMG_ORIGINS:-}
+ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
 ENV NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:-}
 
 # Use simplified config for Docker builds

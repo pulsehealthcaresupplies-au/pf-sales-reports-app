@@ -73,19 +73,27 @@ cp .env.local.example .env.local
 # Edit .env.local with your configuration (see Environment Variables section)
 ```
 
-**4. Ensure backend is running**
+**4. (Optional) Generate VAPID keys for web push**
+
+```bash
+npm run setup:vapid
+```
+
+See [docs/guides/VAPID_KEYS.md](../docs/guides/VAPID_KEYS.md). Required for deployment when push is enabled.
+
+**5. Ensure backend is running**
 
 The Sales Reports App requires:
 - API Gateway running on port 8000
 - Pulse Core backend running on port 8001
 
-**5. Generate GraphQL types (optional, but recommended)**
+**6. Generate GraphQL types (optional, but recommended)**
 
 ```bash
 npm run codegen
 ```
 
-**6. Run development server**
+**7. Run development server**
 
 ```bash
 npm run dev
