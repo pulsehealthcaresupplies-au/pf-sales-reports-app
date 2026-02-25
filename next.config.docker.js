@@ -1,28 +1,37 @@
 /** @type {import('next').NextConfig} */
+// NEXT_PUBLIC_* are provided at Docker build time via build-args -> ENV -> .env.production in Dockerfile.
 const nextConfig = {
-  // Enable standalone output for Docker
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '',
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || '',
+    NEXT_PUBLIC_PULSE_CORE_URL: process.env.NEXT_PUBLIC_PULSE_CORE_URL || '',
+    NEXT_PUBLIC_API_GATEWAY_URL: process.env.NEXT_PUBLIC_API_GATEWAY_URL || '',
+    NEXT_PUBLIC_GRAPHQL_ENDPOINT: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || '',
+    NEXT_PUBLIC_GRAPHQL_AUTH_ENDPOINT: process.env.NEXT_PUBLIC_GRAPHQL_AUTH_ENDPOINT || '',
+    NEXT_PUBLIC_WS_ENDPOINT: process.env.NEXT_PUBLIC_WS_ENDPOINT || '',
+    NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL || '',
+    NEXT_PUBLIC_WS_AUTH_URL: process.env.NEXT_PUBLIC_WS_AUTH_URL || '',
+    NEXT_PUBLIC_WS_NOTIFICATIONS_URL: process.env.NEXT_PUBLIC_WS_NOTIFICATIONS_URL || '',
+    NEXT_PUBLIC_CSP_IMG_ORIGINS: process.env.NEXT_PUBLIC_CSP_IMG_ORIGINS || '',
+    NEXT_PUBLIC_DEPLOYMENT_MODE: process.env.NEXT_PUBLIC_DEPLOYMENT_MODE || '',
+  },
+
   output: 'standalone',
 
-  // Disable image optimization in Docker
   images: {
     unoptimized: true,
   },
 
-  // TypeScript - don't fail on errors during Docker build
   typescript: {
     ignoreBuildErrors: true,
   },
 
-  // Next.js 16: empty turbopack config so build uses webpack
   turbopack: {},
 
-  // Disable source maps in production to save space
   productionBrowserSourceMaps: false,
 
-  // Server components external packages (Apollo Client)
-  serverExternalPackages: ['@apollo/client'],
+  serverExternalPackages: ['@apollo/client', 'web-push'],
 
-  // Basic webpack configuration for Docker build
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
@@ -32,6 +41,6 @@ const nextConfig = {
     };
     return config;
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

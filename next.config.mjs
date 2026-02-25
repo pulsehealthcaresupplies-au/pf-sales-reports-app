@@ -26,7 +26,7 @@ const nextConfig = {
         root: __dirname,
     },
     // Server components external packages (for Apollo Client)
-    serverExternalPackages: ['@apollo/client'],
+    serverExternalPackages: ['@apollo/client', 'web-push'],
     // Webpack configuration for production builds (AWS/Docker)
     webpack: (config, opts) => {
         void opts?.isServer; // Next.js webpack callback signature

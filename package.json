@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "next dev -p 3004",
     "dev:trace": "NEXT_TURBOPACK_TRACING=1 next dev -p 3004",
-    "build": "next build --webpack",
+    "prebuild": "echo 'ℹ️  Skipping automatic codegen (manual sync required)'",
+    "build": "next build",
+    "build:webpack": "next build --webpack",
+    "build:ci": "npm run prebuild && npm run build",
     "build:debug-memory": "next build --webpack --experimental-debug-memory-usage",
     "build:analyze": "ANALYZE=true next build --webpack",
     "start": "next start -p 3004",

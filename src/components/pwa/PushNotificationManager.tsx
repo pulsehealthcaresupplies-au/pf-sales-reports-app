@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { subscribeUser, unsubscribeUser, sendNotification } from '@/app/actions/pwa';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -36,7 +35,13 @@ export function PushNotificationManager({ userId }: { userId?: string }) {
         applicationServerKey: urlBase64ToUint8Array(key) as BufferSource,
       });
       setSubscription(sub);
-      await subscribeUser(JSON.parse(JSON.stringify(sub)), userId);
+      const res = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub.toJSON(), userId }),
+      });
+      if (!res.ok) throw new Error('Subscribe failed');
+      await res.json();
     } catch (e) {
       console.error(e);
     } finally {
@@ -50,7 +55,13 @@ export function PushNotificationManager({ userId }: { userId?: string }) {
       if (subscription) {
         await subscription.unsubscribe();
         setSubscription(null);
-        await unsubscribeUser(userId);
+        const res = await fetch('/api/push/unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        });
+        if (!res.ok) throw new Error('Unsubscribe failed');
+        await res.json();
       }
     } catch (e) {
       console.error(e);
@@ -63,12 +74,16 @@ export function PushNotificationManager({ userId }: { userId?: string }) {
     if (!subscription || !message.trim()) return;
     setLoading(true);
     try {
-      await sendNotification(userId ?? 'anonymous', {
-        title: 'Test',
-        body: message,
-        icon: '/favicon.ico',
-        url: '/',
+      const res = await fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId ?? 'anonymous',
+          notification: { title: 'Test', body: message, icon: '/favicon.ico', url: '/' },
+        }),
       });
+      if (!res.ok) throw new Error('Send failed');
+      await res.json();
       setMessage('');
     } catch (e) {
       console.error(e);

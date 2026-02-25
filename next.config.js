@@ -33,6 +33,10 @@ const nextConfig = {
     if (host) {
       remotePatterns.push({ protocol, hostname: host, port: '', pathname: '/media/**' });
     }
+    remotePatterns.push(
+      { protocol: 'https', hostname: '**.s3.ap-southeast-2.amazonaws.com', port: '', pathname: '/media/**' },
+      { protocol: 'https', hostname: '**.s3.**.amazonaws.com', port: '', pathname: '/media/**' }
+    );
     return {
       remotePatterns,
       formats: ['image/webp', 'image/avif'],
@@ -72,10 +76,45 @@ const nextConfig = {
     }
     return rewrites;
   },
+  // Turbopack (Next.js 16): same as b2b-b2c-app – root + @ alias only; webpack handles react/tailwind for next build.
   turbopack: {
     root: __dirname,
+    resolveAlias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
   },
   outputFileTracingRoot: path.join(__dirname),
+
+  serverExternalPackages: ['@apollo/client', 'web-push'],
+
+  // Webpack: same structure as b2b-b2c-app (see that app's next.config.js)
+  webpack: (config) => {
+    const appNodeModules = path.resolve(__dirname, 'node_modules');
+    config.resolve.modules = [appNodeModules, 'node_modules', ...(config.resolve.modules || [])];
+    config.resolve.symlinks = false;
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, 'src'),
+      react: path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      'react/jsx-runtime': path.resolve(__dirname, 'node_modules/react/jsx-runtime'),
+      'react-dom/client': path.resolve(__dirname, 'node_modules/react-dom/client'),
+      tailwindcss: path.resolve(__dirname, 'node_modules/tailwindcss'),
+      '@tailwindcss/postcss': path.resolve(__dirname, 'node_modules/@tailwindcss/postcss'),
+      postcss: path.resolve(__dirname, 'node_modules/postcss'),
+    };
+    config.resolve.extensionAlias = {
+      '.js': ['.js', '.ts', '.tsx'],
+      '.jsx': ['.jsx', '.tsx'],
+    };
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+    return config;
+  },
 
   // PWA: service worker headers
   async headers() {

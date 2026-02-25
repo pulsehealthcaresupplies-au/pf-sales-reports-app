@@ -5,6 +5,8 @@ import { ConsoleSuppressor } from '@/components/ConsoleSuppressor';
 import { PwaSwRegistration } from '@/components/pwa/PwaSwRegistration';
 import './globals.scss';
 
+export const dynamic = 'force-dynamic';
+
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',

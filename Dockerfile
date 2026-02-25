@@ -63,14 +63,13 @@ ENV NEXT_PUBLIC_CSP_IMG_ORIGINS=${NEXT_PUBLIC_CSP_IMG_ORIGINS:-}
 ENV NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
 ENV NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:-}
 
-# Use simplified config for Docker builds
-RUN cp next.config.docker.js next.config.js || true
+# Use Docker config (same pattern as admin-dashboard)
+RUN cp next.config.docker.js next.config.js
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_ENV_VALIDATION=1
-# Next.js 16 defaults to Turbopack; we have webpack config in next.config.docker.js
-RUN npm run prebuild && npx next build --webpack || npx next build --webpack
+RUN npm run prebuild && npm run build
 
 # Stage 3: runner - minimal production image (standalone + public + static only; no full node_modules)
 FROM base AS runner
