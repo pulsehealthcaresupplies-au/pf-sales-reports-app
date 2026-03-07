@@ -174,6 +174,19 @@ function SidebarContent({ pathname, currentTab, user, logout, onMobileOpenChange
                         </div>
                     )}
                 </div>
+
+                <Link
+                    href="/dashboard/xero"
+                    onClick={() => onMobileOpenChange(false)}
+                    className={cn(
+                        'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group',
+                        pathname === '/dashboard/xero' ? 'bg-primary/10 text-primary font-semibold' : 'text-default-600 hover:bg-default-100 hover:text-foreground'
+                    )}
+                    {...(pathname === '/dashboard/xero' ? { [ACTIVE_NAV_ATTR]: 'true' } : {})}
+                >
+                    <FileText size={20} className={cn('transition-transform duration-200', pathname === '/dashboard/xero' ? 'scale-110' : 'group-hover:scale-105')} />
+                    <span>Xero Accounting</span>
+                </Link>
             </nav>
 
             <div className="p-4 mt-auto border-t border-default-200 space-y-4">

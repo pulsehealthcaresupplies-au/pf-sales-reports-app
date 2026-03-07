@@ -50,9 +50,9 @@ export function SalesReportView(props: SalesReportViewProps) {
       rows: (report.revenueByPeriod || [])
         .filter((item: Types.PeriodRevenue | null | undefined): item is Types.PeriodRevenue => !!item)
         .map((item: Types.PeriodRevenue) => [
-          item.period,
-          (item.revenue || 0).toFixed(2),
-          item.orderCount,
+          item.period ?? '',
+          (item.revenue ?? 0).toFixed(2),
+          item.orderCount ?? 0,
         ]),
     };
 
@@ -72,9 +72,9 @@ export function SalesReportView(props: SalesReportViewProps) {
       rows: (report.revenueByPeriod || [])
         .filter((item: Types.PeriodRevenue | null | undefined): item is Types.PeriodRevenue => !!item)
         .map((item: Types.PeriodRevenue) => [
-          item.period,
-          (item.revenue || 0).toFixed(2),
-          item.orderCount,
+          item.period ?? '',
+          (item.revenue ?? 0).toFixed(2),
+          item.orderCount ?? 0,
         ]),
     };
 
@@ -204,21 +204,21 @@ export function SalesReportView(props: SalesReportViewProps) {
                 {(report.topProducts || [])
                   .filter((product: Types.ProductSales | null | undefined): product is Types.ProductSales => !!product)
                   .map((product: Types.ProductSales) => (
-                    <div key={product.productId} className="border rounded-lg p-4 space-y-2">
+                    <div key={product.productId ?? ''} className="border rounded-lg p-4 space-y-2">
                       <div className="flex justify-between items-start">
                         <h4 className="font-semibold text-small">{product.productName}</h4>
                       </div>
                       <div className="flex justify-between text-tiny">
                         <span className="text-default-500">Revenue</span>
-                        <span className="font-medium">${product.revenue.toFixed(2)}</span>
+                        <span className="font-medium">${Number(product.revenue ?? 0).toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-tiny">
                         <span className="text-default-500">Qty Sold</span>
-                        <span className="font-medium">{product.quantitySold}</span>
+                        <span className="font-medium">{product.quantitySold ?? 0}</span>
                       </div>
                       <div className="flex justify-between text-tiny">
                         <span className="text-default-500">Orders</span>
-                        <span className="font-medium">{product.orderCount}</span>
+                        <span className="font-medium">{product.orderCount ?? 0}</span>
                       </div>
                     </div>
                   ))}
@@ -242,11 +242,11 @@ export function SalesReportView(props: SalesReportViewProps) {
                     {(report.topProducts || [])
                       .filter((product: Types.ProductSales | null | undefined): product is Types.ProductSales => !!product)
                       .map((product: Types.ProductSales) => (
-                        <tr key={product.productId} className="border-b">
-                          <td className="p-2">{product.productName}</td>
-                          <td className="text-right p-2">${product.revenue.toFixed(2)}</td>
-                          <td className="text-right p-2">{product.quantitySold}</td>
-                          <td className="text-right p-2">{product.orderCount}</td>
+                        <tr key={product.productId ?? ''} className="border-b">
+                          <td className="p-2">{product.productName ?? ''}</td>
+                          <td className="text-right p-2">${Number(product.revenue ?? 0).toFixed(2)}</td>
+                          <td className="text-right p-2">{product.quantitySold ?? 0}</td>
+                          <td className="text-right p-2">{product.orderCount ?? 0}</td>
                         </tr>
                       ))}
                     {(!report.topProducts || report.topProducts.length === 0) && (

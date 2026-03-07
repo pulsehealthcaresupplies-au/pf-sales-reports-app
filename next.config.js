@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const path = require('path');
 
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 const getPulseCoreBase = () => {
   const url = process.env.NEXT_PUBLIC_PULSE_CORE_URL || process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_GATEWAY_URL || 'http://localhost:8001';
   return (url || '').replace(/\/+$/, '');
@@ -130,4 +134,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withBundleAnalyzer(nextConfig);

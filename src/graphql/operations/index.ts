@@ -12,5 +12,8 @@ export * from './sales-reports-prefixed-operations';
 // Subscriptions
 export * from './subscriptions';
 
+// Xero status (for sales-reports dashboard)
+export * from './xero';
+
 // Legacy operations (for backward compatibility)
 export * from '../../lib/graphql/operations/queries/sales-reports-queries';
