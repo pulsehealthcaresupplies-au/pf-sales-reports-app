@@ -126,9 +126,11 @@ function getOrRunRefresh(): Promise<string | null> {
 }
 
 // UploadHttpLink handles file uploads (multipart/form-data) and regular GraphQL requests
+// SSR: avoid serving stale cached data; improves TTFB for server-rendered GraphQL (BFF/Untitled-2)
 const httpLink = new UploadHttpLink({
   uri: getGraphQLEndpoint('sales-reports'),
   credentials: 'include',
+  fetchOptions: typeof window === 'undefined' ? { cache: 'no-store' } : undefined,
 });
 
 // Auth link with secure header management
@@ -338,26 +340,30 @@ const retryLink = new RetryLink({
   },
 });
 
-// Cache configuration
-const cache = new InMemoryCache({
+// Cache configuration (BFF/Untitled-3: normalize Product/User for list/detail consistency)
+const cacheConfig = {
   typePolicies: {
+    Product: { keyFields: ['id'] },
+    User: { keyFields: ['id'] },
     Query: {
       fields: {
-        // Add field policies for pagination if needed
+        // Add field policies for pagination (keyArgs + merge) when report lists need them
       },
     },
   },
-});
+};
+
+const cache = new InMemoryCache(cacheConfig);
 
 let apolloClient: ApolloClient | null = null;
 
 export function getApolloClient(): ApolloClient {
   if (typeof window === 'undefined') {
-    // Server-side: create new client for each request
+    // Server-side: create new client for each request (same typePolicies for consistency)
     return new ApolloClient({
       ssrMode: true,
       link: from([errorLink, retryLink, authLink, httpLink]),
-      cache: new InMemoryCache(),
+      cache: new InMemoryCache(cacheConfig),
     });
   }
 
